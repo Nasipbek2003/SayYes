@@ -15,6 +15,7 @@ import { getCurrentAuthorId } from '@/lib/auth/nextCookies';
 import { invitationService } from '@/lib/services/invitation';
 import type { CabinetStatus } from '@/lib/services/invitation';
 
+import { DeleteInvitationButton, DeleteAccountButton } from './DeleteActions';
 import styles from './cabinet.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -72,15 +73,27 @@ export default async function CabinetListPage() {
                   Открытий: {item.opens} · Ответов: {item.responses}
                 </span>
               </div>
-              <span
-                className={`${styles.badge} ${styles[`badge--${item.cabinetStatus}`]}`}
-              >
-                {STATUS_LABEL[item.cabinetStatus]}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span
+                  className={`${styles.badge} ${styles[`badge--${item.cabinetStatus}`]}`}
+                >
+                  {STATUS_LABEL[item.cabinetStatus]}
+                </span>
+                <DeleteInvitationButton invitationId={item.id} />
+              </div>
             </li>
           ))}
         </ul>
       )}
+      {/* Danger zone */}
+      <div className={styles.dangerZone}>
+        <h2 className={styles.dangerTitle}>Удаление аккаунта</h2>
+        <p className={styles.dangerDesc}>
+          Все приглашения, ответы гостей и данные аккаунта будут удалены навсегда.
+          Это действие необратимо.
+        </p>
+        <DeleteAccountButton />
+      </div>
     </main>
   );
 }

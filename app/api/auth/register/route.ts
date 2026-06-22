@@ -1,6 +1,7 @@
 import { env } from '@/lib/env';
 import { hashPassword } from '@/lib/auth/password';
 import { authorRepo } from '@/lib/repositories';
+import { logger } from '@/lib/logger';
 import {
   SESSION_COOKIE_NAME,
   issueSessionToken,
@@ -81,6 +82,8 @@ export async function POST(request: Request): Promise<Response> {
 
   const hashed = await hashPassword(password);
   const author = await authorRepo.createWithPassword(normalizedEmail, hashed);
+
+  logger.info('auth-register-success', { authorId: author.id });
 
   const sessionToken = await issueSessionToken(author.id);
   const dest = redirectAfter

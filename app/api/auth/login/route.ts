@@ -1,6 +1,7 @@
 import { env } from '@/lib/env';
 import { verifyPassword } from '@/lib/auth/password';
 import { authorRepo } from '@/lib/repositories';
+import { logger } from '@/lib/logger';
 import {
   SESSION_COOKIE_NAME,
   issueSessionToken,
@@ -77,6 +78,8 @@ export async function POST(request: Request): Promise<Response> {
     }
     return Response.json({ error: GENERIC_ERROR }, { status: 401 });
   }
+
+  logger.info('auth-login-success', { authorId: author.id });
 
   const sessionToken = await issueSessionToken(author.id);
   const dest = redirectAfter

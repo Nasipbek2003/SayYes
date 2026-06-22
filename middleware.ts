@@ -18,7 +18,7 @@ import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/auth/session';
 
 /** Path prefixes that require an authenticated author. */
 const PROTECTED_API_PREFIXES = ['/api/me', '/api/invitations'];
-const PROTECTED_PAGE_PREFIXES = ['/me'];
+const PROTECTED_PAGE_PREFIXES = ['/me', '/create'];
 
 function matchesPrefix(pathname: string, prefixes: string[]): boolean {
   return prefixes.some(
@@ -52,5 +52,5 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 }
 
 export const config = {
-  matcher: ['/api/me/:path*', '/api/invitations/:path*', '/me/:path*'],
+  matcher: ['/api/me/:path*', '/api/invitations/:path*', '/me/:path*', '/create'],
 };

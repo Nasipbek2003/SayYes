@@ -21,6 +21,7 @@
 import { getPaymentProvider } from '@/lib/payments/provider';
 import { WebhookVerificationError } from '@/lib/payments/provider';
 import { paymentService } from '@/lib/services/payment';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 
@@ -33,11 +34,14 @@ export async function POST(request: Request): Promise<Response> {
     event = await provider.verifyWebhook(request);
   } catch (error) {
     if (error instanceof WebhookVerificationError) {
+      logger.warn('webhook-verification-failed', { error: error.message });
       return Response.json({ error: error.message }, { status: 400 });
     }
-    // Any other verification failure is also a bad request from our side.
+    logger.error('webhook-unexpected-error', { error: String(error) });
     return Response.json({ error: 'Webhook verification failed' }, { status: 400 });
   }
+
+  logger.info('webhook-event-received', { sessionId: event.sessionId, status: event.status });
 
   // 2) Apply the event idempotently (success → activate, fail → keep draft).
   const result = await paymentService.handleWebhook(event);

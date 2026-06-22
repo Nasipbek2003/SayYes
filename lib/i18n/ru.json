@@ -1,0 +1,41 @@
+{
+  "common": {
+    "brand": "SayYes",
+    "login": "Войти",
+    "register": "Регистрация",
+    "logout": "Выйти",
+    "myInvitations": "Мои приглашения",
+    "templates": "Шаблоны",
+    "back": "Назад",
+    "tryAgain": "Попробовать снова"
+  },
+  "hero": {
+    "badge": "Сервис интерактивных приглашений",
+    "title": "Создай персональное приглашение за 5 минут",
+    "subtitle": "Выбери шаблон, впиши данные и получи уникальную ссылку. Адресат откроет её в мессенджере и ответит прямо внутри.",
+    "ctaPrimary": "Выбрать шаблон",
+    "ctaSecondary": "Как это работает"
+  },
+  "auth": {
+    "loginHeading": "Войти в аккаунт",
+    "registerHeading": "Создать аккаунт",
+    "email": "Email",
+    "password": "Пароль",
+    "passwordPlaceholder": "Минимум 6 символов",
+    "loginButton": "Войти",
+    "registerButton": "Зарегистрироваться",
+    "noAccount": "Нет аккаунта?",
+    "hasAccount": "Уже есть аккаунт?",
+    "errorInvalidEmail": "Введите корректный email.",
+    "errorInvalidCredentials": "Неверный email или пароль.",
+    "errorWeakPassword": "Пароль должен быть минимум 6 символов.",
+    "errorEmailTaken": "Этот email уже зарегистрирован. Войдите."
+  },
+  "errors": {
+    "notFound": "Страница не найдена",
+    "notFoundDesc": "Проверьте адрес или вернитесь на главную.",
+    "globalError": "Что-то пошло не так",
+    "globalErrorDesc": "Произошла непредвиденная ошибка. Попробуйте обновить страницу.",
+    "toHome": "На главную"
+  }
+}

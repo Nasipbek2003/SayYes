@@ -1,0 +1,41 @@
+{
+  "common": {
+    "brand": "SayYes",
+    "login": "Кирүү",
+    "register": "Катталуу",
+    "logout": "Чыгуу",
+    "myInvitations": "Менин чакыруларым",
+    "templates": "Үлгүлөр",
+    "back": "Артка",
+    "tryAgain": "Кайра аракет кылуу"
+  },
+  "hero": {
+    "badge": "Интерактивдүү чакыруу кызматы",
+    "title": "5 мүнөттө жеке чакыруу жасаңыз",
+    "subtitle": "Үлгү тандаңыз, маалыматтарды жазыңыз жана уникалдуу шилтеме алыңыз. Дарек ээси аны мессенджерде ачып, ошол жерден жооп берет.",
+    "ctaPrimary": "Үлгү тандоо",
+    "ctaSecondary": "Кантип иштейт"
+  },
+  "auth": {
+    "loginHeading": "Аккаунтка кирүү",
+    "registerHeading": "Аккаунт түзүү",
+    "email": "Email",
+    "password": "Сырсөз",
+    "passwordPlaceholder": "Кеминде 6 символ",
+    "loginButton": "Кирүү",
+    "registerButton": "Катталуу",
+    "noAccount": "Аккаунтуңуз жокпу?",
+    "hasAccount": "Аккаунтуңуз барбы?",
+    "errorInvalidEmail": "Туура email жазыңыз.",
+    "errorInvalidCredentials": "Email же сырсөз туура эмес.",
+    "errorWeakPassword": "Сырсөз кеминде 6 символ болушу керек.",
+    "errorEmailTaken": "Бул email мурунтан катталган. Кириңиз."
+  },
+  "errors": {
+    "notFound": "Бет табылган жок",
+    "notFoundDesc": "Даректи текшериңиз же башкы бетке кайтыңыз.",
+    "globalError": "Бир нерсе туура эмес болду",
+    "globalErrorDesc": "Күтүлбөгөн ката болду. Баракты жаңылаңыз.",
+    "toHome": "Башкы бетке"
+  }
+}

@@ -251,3 +251,66 @@
 .muted {
   color: var(--text-muted);
 }
+
+/* Danger zone */
+.dangerZone {
+  margin-top: 48px;
+  padding: 24px;
+  border: 1.5px solid rgba(217, 83, 76, 0.3);
+  border-radius: var(--radius-card);
+  background: rgba(217, 83, 76, 0.04);
+}
+
+.dangerTitle {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.dangerDesc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.dangerBtn {
+  appearance: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 9px 18px;
+  border-radius: var(--radius-btn);
+  border: 1.5px solid rgba(217, 83, 76, 0.4);
+  background: transparent;
+  color: var(--accent);
+  transition: background 0.15s, color 0.15s;
+}
+
+.dangerBtn:hover {
+  background: var(--accent);
+  color: var(--text-on-cta);
+}
+
+.deleteBtn {
+  appearance: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: var(--radius-chip);
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  transition: border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.deleteBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
