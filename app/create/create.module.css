@@ -659,6 +659,310 @@
   color: #8A736C;
 }
 
-/* Удалены старые классы: page, topbar, back, heading, subheading, layout, previewCol, checkoutBtn */
-/* Старые .tier--active заменён на .tierActive */
+/* ═══════════════════════════════════════
+   Двухэкранный редактор (Экран 1 / Экран 2)
+═══════════════════════════════════════ */
+.editorLayout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 40px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .editorLayout {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}
+
+/* ─── Левая колонка: телефон с превью + вкладки ─── */
+.editorPreviewCol {
+  position: sticky;
+  top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+@media (max-width: 900px) {
+  .editorPreviewCol { position: static; }
+}
+
+.screenTabs {
+  display: inline-flex;
+  background: #fff;
+  border-radius: 999px;
+  padding: 4px;
+  box-shadow: 0 4px 14px rgba(216, 70, 130, 0.1);
+}
+
+.screenTab {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #B08A98;
+  background: transparent;
+  padding: 8px 20px;
+  border-radius: 999px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.screenTabActive {
+  background: linear-gradient(135deg, #F0689B, #E8367A);
+  color: #fff;
+}
+
+/* Телефон превью */
+.editorPhone {
+  width: 300px;
+  height: 600px;
+  background: #FAD4DE;
+  border-radius: 44px;
+  padding: 14px;
+  box-shadow: 0 24px 60px rgba(216, 70, 130, 0.18);
+  position: relative;
+}
+
+@media (max-width: 420px) {
+  .editorPhone { width: 270px; height: 540px; }
+}
+
+.editorPhone::before {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  height: 22px;
+  background: #FAD4DE;
+  border-radius: 0 0 14px 14px;
+  z-index: 3;
+}
+
+.editorScreen {
+  width: 100%;
+  height: 100%;
+  border-radius: 32px;
+  background: linear-gradient(180deg, #FFF5F7 0%, #FCE9EE 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.previewCard {
+  width: 100%;
+  background: #fff;
+  border-radius: 24px;
+  padding: 28px 22px;
+  box-shadow: 0 12px 34px rgba(61, 44, 42, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.previewImg {
+  width: 130px;
+  height: 130px;
+  object-fit: contain;
+}
+
+.previewImgPlaceholder {
+  width: 130px;
+  height: 130px;
+  border-radius: 16px;
+  background: #FCE9EE;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.previewTitle {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  font-weight: 700;
+  color: #E8367A;
+  line-height: 1.3;
+}
+
+.previewSubtitle {
+  font-size: 13px;
+  color: #8A7680;
+  line-height: 1.45;
+  margin-top: -6px;
+}
+
+.previewBtns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.previewBtnYes {
+  background: linear-gradient(135deg, #F0689B, #E8367A);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 14px;
+  border-radius: 14px;
+  box-shadow: 0 6px 16px rgba(232, 54, 122, 0.28);
+}
+
+.previewBtnNo {
+  background: #D9D8E2;
+  color: #6B6B7B;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 14px;
+  border-radius: 14px;
+}
+
+/* ─── Правая колонка: форма ─── */
+.editorForm {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.editorHeader {
+  text-align: left;
+  margin-bottom: 4px;
+}
+
+.editorHeaderTitle {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 700;
+  color: #2D2530;
+  margin-bottom: 4px;
+}
+
+.editorHeaderDesc {
+  font-size: 14px;
+  color: #B08A98;
+}
+
+.editorSection {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 24px;
+  padding: 28px 26px;
+  box-shadow: 0 14px 40px rgba(216, 70, 130, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.editorSectionTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #E8367A;
+}
+
+/* Выбор картинки */
+.imageBlock {
+  background: #F7F6F8;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.imageBlockLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #3D2C2A;
+}
+
+.imageGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 480px) {
+  .imageGrid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+}
+
+.imageThumb {
+  appearance: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 12px;
+  border: 2px solid #EDE6EA;
+  background: #fff;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, transform 0.12s;
+}
+
+.imageThumb:hover {
+  border-color: #F0A8C2;
+  transform: translateY(-2px);
+}
+
+.imageThumbActive {
+  border-color: #E8367A;
+  box-shadow: 0 4px 14px rgba(232, 54, 122, 0.22);
+}
+
+.imageThumbImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.uploadOwn {
+  align-self: flex-start;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 1.5px solid #E8367A;
+  background: transparent;
+  color: #E8367A;
+  transition: background 0.15s, color 0.15s;
+}
+
+.uploadOwn:hover {
+  background: #E8367A;
+  color: #fff;
+}
+
+.fileHint {
+  font-size: 12px;
+  color: #B08A98;
+}
+
+.charCount {
+  font-size: 11px;
+  color: #B08A98;
+  text-align: right;
+  margin-top: -2px;
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 480px) {
+  .fieldRow { grid-template-columns: 1fr; }
+}
 /* .notice--error / .notice--info → .noticeError / .noticeInfo */
