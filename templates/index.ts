@@ -24,4 +24,8 @@ import { simpleDate } from './simple-date';
 import { storyFork } from './story-fork';
 import type { TemplateSchema } from './types';
 
+/** All schemas — used by the registry (lookup by id for existing invitations). */
 export const templateSchemas: TemplateSchema[] = [dateAsk, simpleDate, storyFork, eventRsvp];
+
+/** Only templates shown in the gallery for new invitations. */
+export const gallerySchemas: TemplateSchema[] = [dateAsk, storyFork, eventRsvp];

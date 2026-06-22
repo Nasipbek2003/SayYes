@@ -19,8 +19,11 @@
  * gallery visual and avoids broken `<img>` tags pointing at non-existent files.
  */
 import { resolveOgTheme } from '@/lib/og/theme';
-import { templateRegistry } from '@/lib/templates/registry';
+import { InMemoryTemplateRegistry } from '@/lib/templates/registry';
+import { gallerySchemas } from '@/templates';
 import type { TemplateRegistry, TemplateSummary } from '@/templates/types';
+
+const galleryRegistry: TemplateRegistry = new InMemoryTemplateRegistry(gallerySchemas);
 
 /** Base path of the creation flow (task 10.2 fills in the actual form). */
 export const CREATE_PATH = '/create';
@@ -124,7 +127,7 @@ function toTemplateView(summary: TemplateSummary): GalleryTemplateView {
  * array, which the page renders as the empty state (Requirement 1.4).
  */
 export function buildGallery(
-  registry: TemplateRegistry = templateRegistry,
+  registry: TemplateRegistry = galleryRegistry,
 ): GalleryTemplateView[] {
   return registry.list().map(toTemplateView);
 }
