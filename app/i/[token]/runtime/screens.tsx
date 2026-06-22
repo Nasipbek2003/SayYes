@@ -777,7 +777,45 @@ function IntroScreen(props: ScreenProps): ReactNode {
   );
 }
 
+/**
+ * Шаблон «date-ask» — экраны приглашения и подтверждения. Картинка, заголовок,
+ * (опц.) подзаголовок и пара «Да / убегающая Нет» ({@link RunawayButton}): «Да»
+ * растёт и ведёт дальше, «Нет» убегает и исчезает после нескольких попыток.
+ */
+function DateAskInvite({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const image = screen.elements.find((el) => el.kind === 'image');
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const subtitle = screen.elements.find((el) => el.kind === 'text');
+  const yesBtn = screen.elements.find((el) => el.kind === 'button' && el.id === 'yes');
+  const noBtn = screen.elements.find((el) => el.kind === 'button' && el.id === 'no');
+
+  const imgSrc = substitute(image?.src, vars);
+  const headingText = substitute(heading?.text, vars);
+  const subtitleText = substitute(subtitle?.text, vars);
+  const yesAction = yesBtn?.action ?? 'click:yes';
+
+  return (
+    <ScreenShell kind="invite" screenId={screen.id}>
+      <FloatingHearts count={8} />
+      <div className="da-screen">
+        {imgSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="da-image" src={imgSrc} alt="" />
+        ) : null}
+        {headingText ? <h1 className="screen__heading">{headingText}</h1> : null}
+        {subtitleText ? <p className="screen__text">{subtitleText}</p> : null}
+        <RunawayButton
+          yesLabel={substitute(yesBtn?.text, vars) || 'Да'}
+          noLabel={substitute(noBtn?.text, vars) || 'Нет'}
+          onYes={() => onAction(yesAction)}
+        />
+      </div>
+    </ScreenShell>
+  );
+}
+
 function InviteScreen(props: ScreenProps): ReactNode {
+  if (props.templateId === 'date-ask') return DateAskInvite(props);
   if (isSimpleDate(props.templateId)) return SimpleDateInvite(props);
   if (isStoryFork(props.templateId)) return StoryForkInvite(props);
   return (

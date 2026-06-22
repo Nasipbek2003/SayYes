@@ -58,7 +58,9 @@ export const dateAsk: TemplateSchema = {
         { kind: 'image', id: 'photo2', src: '{{screen2_image}}' },
         { kind: 'heading', id: 'title2', text: '{{screen2_title}}' },
         { kind: 'text', id: 'subtitle2', text: '{{screen2_subtitle}}' },
-        { kind: 'button', id: 'confirm', text: '{{btn_confirm}}', action: 'click:confirm' },
+        // Положительная кнопка (id 'yes') → финал; «Нет» (id 'no') убегает.
+        { kind: 'button', id: 'yes', text: '{{btn_confirm}}', action: 'click:confirm' },
+        { kind: 'button', id: 'no', text: '{{btn_no}}', action: 'click:confirm-no' },
       ],
       transitions: [{ on: 'click:confirm', to: 'screen-3' }],
     },

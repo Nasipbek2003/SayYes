@@ -324,7 +324,10 @@ export function CreateForm({ template, themeId }: CreateFormProps) {
                           <span className={styles.previewBtnNo}>{str('btn_no') || 'Нет'}</span>
                         </>
                       ) : (
-                        <span className={styles.previewBtnYes}>{str('btn_confirm') || 'Да, конечно!'}</span>
+                        <>
+                          <span className={styles.previewBtnYes}>{str('btn_confirm') || 'Да, конечно!'}</span>
+                          <span className={styles.previewBtnNo}>{str('btn_no') || 'Нет'}</span>
+                        </>
                       )}
                     </div>
                   </div>
