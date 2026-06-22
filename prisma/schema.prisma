@@ -10,6 +10,7 @@ datasource db {
 model Author {
   id             String           @id @default(cuid())
   email          String?          @unique
+  passwordHash   String?
   telegramChatId String?          @unique
   createdAt      DateTime         @default(now())
   invitations    Invitation[]

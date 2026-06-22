@@ -32,6 +32,14 @@ export async function findOrCreateByEmail(email: string): Promise<Author> {
   return prisma.author.create({ data: { email } });
 }
 
+/** Create an author with email and password hash. */
+export function createWithPassword(
+  email: string,
+  passwordHash: string,
+): Promise<Author> {
+  return prisma.author.create({ data: { email, passwordHash } });
+}
+
 /** Attach a Telegram chat id to an author (Telegram-login / linking). */
 export function setTelegramChatId(
   id: string,

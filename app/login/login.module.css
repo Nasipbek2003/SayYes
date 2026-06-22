@@ -41,6 +41,38 @@
   color: var(--text);
 }
 
+/* Табы */
+.tabs {
+  display: flex;
+  gap: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1.5px solid var(--border);
+}
+
+.tab {
+  flex: 1;
+  appearance: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 10px 0;
+  border: none;
+  background: var(--bg);
+  color: var(--text-muted);
+  transition: background 0.15s, color 0.15s;
+}
+
+.tab:first-child {
+  border-right: 1.5px solid var(--border);
+}
+
+.tabActive {
+  background: var(--accent);
+  color: var(--text-on-cta);
+}
+
 /* Заголовки */
 .heading {
   font-family: var(--font-serif);
@@ -146,8 +178,15 @@
 }
 
 .footerLink {
+  appearance: none;
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
   color: var(--accent-decor);
   text-decoration: none;
+  padding: 0;
 }
 
 .footerLink:hover {
