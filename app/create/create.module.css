@@ -4,9 +4,33 @@
 
 .wizard {
   min-height: 100dvh;
-  background: #FEF0F0;
+  background:
+    radial-gradient(ellipse 70% 50% at 10% 0%, rgba(255, 200, 220, 0.45) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 50% at 95% 8%, rgba(255, 210, 225, 0.4) 0%, transparent 50%),
+    linear-gradient(180deg, #FDEDF1 0%, #FCE6EC 100%);
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ─── Декоративные лепестки ─── */
+.petal {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 60% 40% 55% 45% / 55% 50% 50% 45%;
+  background: linear-gradient(135deg, rgba(255, 190, 210, 0.55), rgba(255, 215, 225, 0.3));
+  filter: blur(1px);
+  z-index: 0;
+}
+
+.petal1 { width: 130px; height: 90px; top: 70px; left: -30px; transform: rotate(-25deg); }
+.petal2 { width: 110px; height: 78px; top: 120px; right: -25px; transform: rotate(35deg); }
+.petal3 { width: 90px; height: 64px; bottom: 80px; left: 40px; transform: rotate(15deg); opacity: 0.7; }
+.petal4 { width: 70px; height: 50px; bottom: 140px; right: 70px; transform: rotate(-15deg); opacity: 0.6; }
+
+@media (max-width: 768px) {
+  .petal2, .petal4 { display: none; }
 }
 
 /* ─── Прогресс-бар ─── */
@@ -15,10 +39,12 @@
   align-items: center;
   justify-content: center;
   gap: 0;
-  padding: 28px 20px 20px;
+  padding: 32px 20px 24px;
   max-width: 560px;
   margin: 0 auto;
   width: 100%;
+  position: relative;
+  z-index: 2;
 }
 
 .progressLine {
@@ -61,27 +87,32 @@
 /* ─── Контент шага ─── */
 .stepContent {
   flex: 1;
-  max-width: 900px;
+  max-width: 1080px;
   margin: 0 auto;
-  padding: 0 20px 40px;
+  padding: 0 24px 48px;
   width: 100%;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 /* ─── Шаг 1: Приветствие ─── */
 .welcomeLayout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 40px;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: 56px;
   align-items: center;
-  min-height: 60vh;
+  min-height: 64vh;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 860px) {
   .welcomeLayout {
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 32px;
     min-height: auto;
-    padding-top: 20px;
+    padding-top: 12px;
   }
 }
 
@@ -91,95 +122,180 @@
   justify-content: center;
 }
 
+/* Реалистичный телефон */
 .welcomePhone {
-  width: 280px;
-  height: 440px;
-  background: #fff;
-  border: 3px solid #F5C6C6;
-  border-radius: 36px;
+  width: 300px;
+  height: 600px;
+  background: #1c1c22;
+  border-radius: 44px;
   padding: 12px;
-  box-shadow: 0 20px 60px rgba(233, 91, 139, 0.15);
+  box-shadow:
+    0 30px 70px rgba(216, 70, 130, 0.22),
+    0 0 0 2px rgba(255, 255, 255, 0.5);
+  position: relative;
+}
+
+@media (max-width: 860px) {
+  .welcomePhone {
+    width: 260px;
+    height: 520px;
+  }
+}
+
+/* Вырез-«монобровь» */
+.welcomePhone::before {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 110px;
+  height: 26px;
+  background: #1c1c22;
+  border-radius: 0 0 16px 16px;
+  z-index: 3;
+}
+
+.welcomeScreen {
+  width: 100%;
+  height: 100%;
+  border-radius: 33px;
+  overflow: hidden;
+  position: relative;
+  background: linear-gradient(165deg, #FBE0D6 0%, #F6C9CE 45%, #EFB4C4 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 16px;
+  justify-content: flex-end;
+  padding: 0 0 22px;
+}
+
+/* Большое сердце-иллюстрация в телефоне */
+.welcomeScreenHeart {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 12px 24px rgba(216, 70, 130, 0.35));
+  animation: floatHeart 3s ease-in-out infinite;
+}
+
+@keyframes floatHeart {
+  0%, 100% { transform: translate(-50%, -50%); }
+  50% { transform: translate(-50%, -58%); }
+}
+
+/* Карточка-приглашение внутри телефона */
+.welcomeCard {
+  position: relative;
+  z-index: 2;
+  width: calc(100% - 28px);
+  background: #fff;
+  border-radius: 18px;
+  padding: 16px 16px 18px;
+  box-shadow: 0 10px 30px rgba(61, 44, 42, 0.18);
   text-align: center;
 }
 
-.welcomePhoneEmoji {
-  font-size: 56px;
-  line-height: 1;
+.welcomeCardLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #E8367A;
+  margin-bottom: 6px;
 }
 
-.welcomePhoneText {
+.welcomeCardTitle {
   font-family: var(--font-serif);
-  font-size: 16px;
-  color: #3D2C2A;
+  font-size: 17px;
+  font-weight: 500;
+  color: #2D2530;
+  line-height: 1.3;
+  margin-bottom: 4px;
 }
 
-.welcomePhoneSub {
+.welcomeCardSub {
   font-size: 12px;
-  color: #8A736C;
+  color: #8A7680;
+  margin-bottom: 12px;
 }
 
+.welcomeCardBtn {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: #E8367A;
+  padding: 8px 22px;
+  border-radius: 999px;
+}
+
+/* Правый блок-карточка */
 .welcomeRight {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  background: #fff;
-  border-radius: 24px;
-  padding: 48px 40px;
-  border: 1.5px solid #F5C6C6;
+  gap: 18px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  border-radius: 32px;
+  padding: 56px 52px;
+  box-shadow: 0 20px 60px rgba(216, 70, 130, 0.1);
+  text-align: center;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 860px) {
   .welcomeRight {
-    padding: 32px 24px;
+    padding: 36px 26px;
+    gap: 16px;
   }
 }
 
 .welcomeTitle {
   font-family: var(--font-serif);
-  font-size: 32px;
-  font-weight: 400;
-  color: #3D2C2A;
-  line-height: 1.25;
+  font-size: 46px;
+  font-weight: 700;
+  color: #2D2530;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
 }
 
-@media (max-width: 768px) {
-  .welcomeTitle { font-size: 24px; }
+@media (max-width: 860px) {
+  .welcomeTitle { font-size: 30px; }
 }
 
 .welcomeAccent {
-  color: #E95B8B;
-  font-weight: 700;
+  color: #EC2D7A;
+  font-weight: 800;
   display: block;
-  font-size: 38px;
-  margin-top: 4px;
+  font-size: 60px;
+  letter-spacing: 0.01em;
+  margin-top: 10px;
 }
 
-@media (max-width: 768px) {
-  .welcomeAccent { font-size: 28px; }
+@media (max-width: 860px) {
+  .welcomeAccent { font-size: 40px; }
 }
 
 .welcomeSubtitle {
-  font-size: 15px;
-  color: #8A736C;
-  line-height: 1.55;
+  font-size: 17px;
+  color: #8A7680;
+  line-height: 1.5;
+  margin-top: 2px;
 }
 
 .welcomeQuestion {
-  font-size: 15px;
-  color: #3D2C2A;
-  text-align: center;
+  font-size: 17px;
+  color: #2D2530;
+  margin-top: 14px;
 }
 
 .welcomeActions {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   justify-content: center;
   flex-wrap: wrap;
+  margin-top: 6px;
 }
 
 /* ─── Кнопки ─── */
@@ -188,18 +304,20 @@
   border: none;
   cursor: pointer;
   font-family: var(--font-sans);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   color: #fff;
-  background: #E95B8B;
-  padding: 14px 36px;
+  background: linear-gradient(135deg, #F0689B 0%, #E8367A 100%);
+  padding: 16px 44px;
   border-radius: 999px;
-  transition: background 0.15s, transform 0.1s;
+  box-shadow: 0 8px 22px rgba(232, 54, 122, 0.32);
+  transition: transform 0.12s, box-shadow 0.15s;
   white-space: nowrap;
 }
 
 .btnPrimary:hover {
-  background: #D44A7A;
+  box-shadow: 0 10px 28px rgba(232, 54, 122, 0.42);
+  transform: translateY(-1px);
 }
 
 .btnPrimary:active {
@@ -209,25 +327,26 @@
 .btnPrimary:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .btnSecondary {
   appearance: none;
-  border: 1.5px solid #E0C8C8;
+  border: none;
   cursor: pointer;
   font-family: var(--font-sans);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
-  color: #8A736C;
-  background: #F0DEDE;
-  padding: 14px 36px;
+  color: #6B6B7B;
+  background: #D9D8E2;
+  padding: 16px 44px;
   border-radius: 999px;
-  transition: border-color 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s;
   white-space: nowrap;
 }
 
 .btnSecondary:hover {
-  border-color: #E95B8B;
+  background: #CBCAD6;
   color: #E95B8B;
 }
 
@@ -253,24 +372,26 @@
 .formStep {
   max-width: 560px;
   margin: 0 auto;
-  background: #fff;
-  border-radius: 24px;
-  padding: 40px 36px;
-  border: 1.5px solid #F5C6C6;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border-radius: 28px;
+  padding: 44px 40px;
+  box-shadow: 0 20px 60px rgba(216, 70, 130, 0.1);
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
 @media (max-width: 600px) {
-  .formStep { padding: 28px 20px; }
+  .formStep { padding: 30px 22px; }
 }
 
 .stepTitle {
   font-family: var(--font-serif);
-  font-size: 22px;
-  font-weight: 400;
-  color: #3D2C2A;
+  font-size: 26px;
+  font-weight: 700;
+  color: #2D2530;
   text-align: center;
 }
 

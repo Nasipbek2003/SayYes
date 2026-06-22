@@ -207,6 +207,12 @@ export function CreateForm({ template, themeId, isAuthed = false }: CreateFormPr
 
   return (
     <div className={styles.wizard}>
+      {/* Декоративные лепестки */}
+      <span className={`${styles.petal} ${styles.petal1}`} aria-hidden="true" />
+      <span className={`${styles.petal} ${styles.petal2}`} aria-hidden="true" />
+      <span className={`${styles.petal} ${styles.petal3}`} aria-hidden="true" />
+      <span className={`${styles.petal} ${styles.petal4}`} aria-hidden="true" />
+
       {/* Progress bar */}
       <div className={styles.progressBar}>
         {Array.from({ length: TOTAL_STEPS }, (_, i) => {
@@ -230,14 +236,22 @@ export function CreateForm({ template, themeId, isAuthed = false }: CreateFormPr
           <div className={styles.welcomeLayout}>
             <div className={styles.welcomeImage}>
               <div className={styles.welcomePhone}>
-                <Heart fill="#E95B8B" color="#E95B8B" size={56} strokeWidth={0} />
-                <p className={styles.welcomePhoneText}>Тебе приглашают<br/>на свидание!</p>
-                <p className={styles.welcomePhoneSub}>Откроешь? 💌</p>
+                <div className={styles.welcomeScreen}>
+                  <div className={styles.welcomeScreenHeart}>
+                    <Heart fill="#E8367A" color="#E8367A" size={92} strokeWidth={0} />
+                  </div>
+                  <div className={styles.welcomeCard}>
+                    <p className={styles.welcomeCardLabel}>Приглашение на свидание</p>
+                    <p className={styles.welcomeCardTitle}>Тебе приглашают<br />на свидание!</p>
+                    <p className={styles.welcomeCardSub}>Для тебя приготовили кое-что особенное</p>
+                    <span className={styles.welcomeCardBtn}>Открыть →</span>
+                  </div>
+                </div>
               </div>
             </div>
             <div className={styles.welcomeRight}>
               <h1 className={styles.welcomeTitle}>
-                Создай приглашение<br />на свидание
+                Создай приглашение на свидание
                 <span className={styles.welcomeAccent}>ЗА 2 МИНУТЫ</span>
               </h1>
               <p className={styles.welcomeSubtitle}>
