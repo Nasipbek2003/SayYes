@@ -18,9 +18,10 @@
  * validation and response validation. Until task 3.2 lands, the list is empty
  * and the runtime/API simply have no templates to offer.
  */
+import { dateAsk } from './date-ask';
 import { eventRsvp } from './event-rsvp';
 import { simpleDate } from './simple-date';
 import { storyFork } from './story-fork';
 import type { TemplateSchema } from './types';
 
-export const templateSchemas: TemplateSchema[] = [simpleDate, storyFork, eventRsvp];
+export const templateSchemas: TemplateSchema[] = [dateAsk, simpleDate, storyFork, eventRsvp];

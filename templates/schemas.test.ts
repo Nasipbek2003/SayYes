@@ -63,8 +63,9 @@ function screensThatCanReachFinal(schema: TemplateSchema): Set<string> {
 }
 
 describe('template registration', () => {
-  it('registers exactly the three MVP templates', () => {
+  it('registers the MVP templates', () => {
     expect(templateSchemas.map((s) => s.id)).toEqual([
+      'date-ask',
       'simple-date',
       'story-fork',
       'event-rsvp',

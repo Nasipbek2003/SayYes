@@ -832,7 +832,27 @@ function EventDetailsScreen(props: ScreenProps): ReactNode {
   );
 }
 
+/**
+ * Шаблон «date-ask» — финал согласия. Конфетти + плавающие сердечки и
+ * успешный текст (рендерится обобщённым конфигом финала).
+ */
+function DateAskFinal({ screen, vars }: ScreenProps): ReactNode {
+  const config = finalScreenConfig(screen, vars);
+  return (
+    <ScreenShell kind="final" screenId={screen.id}>
+      <FloatingHearts count={14} />
+      {config.hasConfetti ? <Confetti /> : null}
+      <div className="t1-final">
+        {config.successLines.map((line, index) => (
+          <p key={index} className="t1-final__text">{line}</p>
+        ))}
+      </div>
+    </ScreenShell>
+  );
+}
+
 function FinalScreen(props: ScreenProps): ReactNode {
+  if (props.templateId === 'date-ask') return DateAskFinal(props);
   if (isSimpleDate(props.templateId)) return SimpleDateFinal(props);
   if (isStoryFork(props.templateId)) {
     return isSoftDeclineScreen(props.screen)
