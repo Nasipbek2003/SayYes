@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+build
+coverage
+prisma/migrations
+package-lock.json
+
+# Spec & concept docs (managed outside the app)
+.kiro
+koncepciya-servisa-priglasheniy.md
+scenarii-shablonov-spec.md

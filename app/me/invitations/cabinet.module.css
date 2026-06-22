@@ -1,0 +1,253 @@
+/* Кабинет автора — дизайн «Тёплый персик» */
+
+.page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+  background: var(--bg);
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 400;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.back {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  display: inline-block;
+  margin-bottom: 16px;
+}
+
+/* Пустое состояние */
+.empty {
+  text-align: center;
+  padding: 48px 20px;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius-card);
+}
+
+.emptyTitle {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text);
+  margin: 12px 0 6px;
+}
+
+.emptyText {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.cta {
+  display: inline-block;
+  margin-top: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: var(--radius-btn);
+  background: var(--accent);
+  color: var(--text-on-cta);
+}
+
+/* Список приглашений */
+.list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: var(--radius-chip);
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  transition: border-color 0.15s;
+}
+
+.item:hover {
+  border-color: var(--accent-decor);
+}
+
+.itemMain {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.itemName {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.itemMeta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.itemLink {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+/* Статусные бейджи */
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.badge--draft {
+  background: rgba(61, 44, 42, 0.06);
+  color: var(--text-muted);
+}
+
+.badge--active {
+  background: rgba(255, 154, 118, 0.15);
+  color: var(--accent-decor);
+}
+
+.badge--responded {
+  background: rgba(232, 98, 90, 0.12);
+  color: var(--accent);
+}
+
+.badge--expired {
+  background: rgba(138, 115, 108, 0.1);
+  color: var(--text-muted);
+}
+
+/* Детальная страница */
+.section {
+  margin-top: 28px;
+}
+
+.sectionTitle {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.linkRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-chip);
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  word-break: break-all;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.stats {
+  display: flex;
+  gap: 24px;
+  margin-top: 12px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.statNum {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--accent);
+}
+
+.statLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* RSVP-дашборд */
+.totals {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 520px) {
+  .totals { grid-template-columns: 1fr; }
+}
+
+.totalCard {
+  padding: 16px;
+  border-radius: var(--radius-chip);
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  text-align: center;
+}
+
+.totalNum {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--accent);
+}
+
+.totalLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Таблицы */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1.5px solid var(--border);
+}
+
+.table th {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.muted {
+  color: var(--text-muted);
+}

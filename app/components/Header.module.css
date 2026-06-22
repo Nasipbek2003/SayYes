@@ -1,0 +1,145 @@
+/* Шапка — дизайн «Тёплый персик» */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255, 246, 239, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1.5px solid var(--border);
+}
+
+.inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 20px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+/* Логотип */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.logoEmoji {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.logoName {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+/* Навигация */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.navLink {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.navLink:hover {
+  background: rgba(255, 154, 118, 0.12);
+  color: var(--accent);
+}
+
+/* Профиль */
+.profile {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.userMenu {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Аватар-инициал */
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  color: var(--accent);
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  border: 1.5px solid var(--border);
+  transition: border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.avatar:hover {
+  border-color: var(--accent);
+}
+
+.logoutBtn {
+  appearance: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--text-muted);
+  padding: 5px 12px;
+  border-radius: 8px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.logoutBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.loginBtn {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-on-cta);
+  background: var(--accent);
+  padding: 7px 16px;
+  border-radius: var(--radius-btn);
+  transition: background 0.15s ease;
+}
+
+.loginBtn:hover {
+  background: #d9534c;
+}
+
+/* Мобильная адаптация */
+@media (max-width: 600px) {
+  .nav {
+    display: none;
+  }
+
+  .inner {
+    gap: 12px;
+  }
+}

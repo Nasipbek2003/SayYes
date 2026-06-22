@@ -1,0 +1,155 @@
+/* Страница входа — дизайн «Тёплый персик» */
+
+.main {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: var(--bg);
+}
+
+.card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 40px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 4px 32px rgba(61, 44, 42, 0.07);
+}
+
+/* Бренд */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brandEmoji {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.brandName {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text);
+}
+
+/* Заголовки */
+.heading {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.25;
+}
+
+.subheading {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: -12px 0 0;
+  line-height: 1.55;
+}
+
+/* Ошибка */
+.errorBox {
+  background: rgba(217, 83, 76, 0.08);
+  border: 1.5px solid rgba(232, 98, 90, 0.3);
+  border-radius: 10px;
+  color: var(--accent);
+  font-size: 13px;
+  padding: 11px 14px;
+  line-height: 1.45;
+}
+
+/* Форма */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.input {
+  appearance: none;
+  font: inherit;
+  font-size: 14px;
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+.input:focus {
+  border-color: var(--accent);
+  background: var(--card);
+}
+
+/* Кнопка отправки */
+.submitBtn {
+  appearance: none;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: var(--radius-btn);
+  border: none;
+  background: var(--accent);
+  color: var(--text-on-cta);
+  transition: background 0.15s ease, transform 0.1s ease;
+  text-align: center;
+  display: block;
+}
+
+.submitBtn:hover {
+  background: #d9534c;
+}
+
+.submitBtn:active {
+  transform: scale(0.98);
+}
+
+/* Сноска */
+.footer {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.footerLink {
+  color: var(--accent-decor);
+  text-decoration: none;
+}
+
+.footerLink:hover {
+  text-decoration: underline;
+}

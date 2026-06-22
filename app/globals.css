@@ -1,0 +1,833 @@
+/* ============================================================
+   Дизайн-система «Тёплый персик»
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&display=swap');
+
+:root {
+  /* --- Цветовая палитра --- */
+  --bg:            #FFF6EF;   /* Кремовый — основной фон */
+  --bg-secondary:  #FFD9C2;   /* Светлый персик — плашки, декор */
+  --accent-decor:  #FF9A76;   /* Персиково-коралловый — иконки, ховер */
+  --accent:        #E8625A;   /* Коралл — главные кнопки CTA */
+  --text:          #3D2C2A;   /* Тёмно-коричневый — основной текст */
+  --text-muted:    #8A736C;   /* Приглушённый — подзаголовки */
+  --text-on-cta:   #FBEAE6;   /* Текст на кораллевой кнопке */
+  --border:        #EDD9CE;   /* Граница карточек по умолчанию */
+  --border-active: #E8625A;   /* Граница выбранной карточки */
+  --brand-sig:     #C9B3A8;   /* Подпись бренда */
+  --card:          #FFFFFF;   /* Фон карточек */
+  --sad-bg:        #FFE3D2;   /* Фон иконки «грусти» */
+  --sad-accent:    #D9897A;   /* Акцент «отказного» состояния */
+
+  /* --- Типографика --- */
+  --font-serif:    'Lora', Georgia, 'Times New Roman', serif;
+  --font-sans:     'Inter', system-ui, -apple-system, sans-serif;
+
+  /* --- Скругления --- */
+  --radius-card:   20px;
+  --radius-btn:    12px;
+  --radius-chip:   8px;
+  --radius-avatar: 50%;
+}
+
+/* ============================================================
+   Сброс и базовые стили
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html, body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ============================================================
+   Scenario Runtime — контейнер приглашения
+   ============================================================ */
+.invitation-page {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  overflow-y: auto;
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 30%, rgba(255, 154, 118, 0.22) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 60% at 85% 70%, rgba(232, 98, 90, 0.13) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 40% at 50% 5%,  rgba(255, 217, 194, 0.35) 0%, transparent 60%),
+    var(--bg);
+}
+
+.invitation-runtime {
+  position: relative;
+  width: 100%;
+  max-width: 560px;       /* шире на десктопе */
+  margin: 0 auto;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: transparent; /* прозрачный — фон берётся от .invitation-page */
+}
+
+.screen-motion {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  text-align: center;
+  padding: 2.5rem 2.5rem 3rem;
+  max-width: 560px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Заголовок экрана — serif, эмоциональный */
+.screen__heading {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.screen__text {
+  font-size: 1rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.screen__image {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-chip);
+}
+
+/* Основная CTA кнопка — коралл */
+.screen__button {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-on-cta);
+  background: var(--accent);
+  padding: 0.8rem 1.75rem;
+  border-radius: var(--radius-btn);
+  min-width: 8rem;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.screen__button:hover {
+  background: #d9534c;
+}
+
+.screen__button:active {
+  transform: scale(0.97);
+}
+
+.screen--loading {
+  gap: 0.75rem;
+}
+
+/* Кнопка mute */
+.mute-button {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 10;
+  appearance: none;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  background: var(--card);
+}
+
+/* Подпись бренда */
+.brand-signature {
+  text-align: center;
+  padding: 1rem;
+  color: var(--brand-sig);
+  font-size: 0.625rem;  /* 9-10px */
+  letter-spacing: 0.02em;
+}
+
+/* ============================================================
+   Спец-компоненты анимаций
+   ============================================================ */
+
+/* Убегающая кнопка «Нет» */
+.runaway {
+  position: relative;
+  width: 100%;
+  min-height: 8rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+}
+
+.runaway__no {
+  position: relative;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  will-change: transform;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 0.85rem 1.75rem;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+/* Плавающие сердечки — outline, тёплые цвета */
+.floating-hearts {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.floating-hearts__heart {
+  position: absolute;
+  bottom: -2rem;
+  color: var(--accent-decor);
+  opacity: 0.5;
+  will-change: transform, opacity;
+}
+
+/* Обратный отсчёт */
+.countdown {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.countdown__unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 3rem;
+}
+
+.countdown__value {
+  font-family: var(--font-serif);
+  font-size: 1.8rem;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.countdown__label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.countdown--past {
+  color: var(--accent);
+}
+
+/* ============================================================
+   Шаблон 1 — «Приглашение на свидание»
+   ============================================================ */
+.t1-intro {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.t1-intro__photo {
+  width: 7rem;
+  height: 7rem;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid var(--bg-secondary);
+}
+
+.t1-intro__heart {
+  font-size: 5rem;
+  line-height: 1;
+  color: var(--accent-decor);
+}
+
+.t1-intro__open {
+  font-size: 1rem;
+  padding: 1rem 2.5rem;
+}
+
+.t1-invite {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* Главный текст приглашения — serif */
+.t1-invite__text {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.t1-invite__signature {
+  font-size: 1rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.t1-final {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.t1-final__text {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+/* ============================================================
+   Шаблон 2 — «Ты реально мне отказала?»
+   ============================================================ */
+.t2-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Второстепенная кнопка — прозрачная с обводкой */
+.t2-actions__no {
+  appearance: none;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.t2-actions__no:hover {
+  border-color: var(--accent-decor);
+}
+
+.t2-invite {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  width: 100%;
+}
+
+.t2-invite__text {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.t2-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.t2-confirm__emoji {
+  font-size: 4.5rem;
+  line-height: 1;
+  color: var(--sad-accent);
+}
+
+.t2-confirm__text {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.t2-soft-decline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.t2-soft-decline__emoji {
+  font-size: 3rem;
+  line-height: 1;
+  color: var(--accent-decor);
+}
+
+.t2-soft-decline__text {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.t2-soft-decline__reconsider {
+  margin-top: 0.5rem;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--text-muted);
+}
+
+/* Выбор места */
+.t2-place {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.t2-place__prompt {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 400;
+  text-align: center;
+  color: var(--text);
+}
+
+.t2-place__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+/* Карточка места — белый фон, тонкая обводка */
+.t2-place__card {
+  appearance: none;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.85rem;
+  border-radius: var(--radius-chip);
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.t2-place__card--active {
+  border-color: var(--border-active);
+  transform: scale(1.02);
+}
+
+.t2-place__photo {
+  width: 100%;
+  height: 8rem;       /* было 5rem — стало крупнее */
+  object-fit: cover;
+  border-radius: calc(var(--radius-chip) - 4px);
+}
+
+.t2-place__name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.t2-place__desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.t2-place__free,
+.t2-time__free {
+  appearance: none;
+  font: inherit;
+  font-size: 0.85rem;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius-chip);
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  outline: none;
+}
+
+.t2-place__free::placeholder,
+.t2-time__free::placeholder {
+  color: var(--text-muted);
+}
+
+.t2-place__free:focus,
+.t2-time__free:focus {
+  border-color: var(--accent);
+}
+
+.t2-place__done,
+.t2-time__confirm {
+  align-self: center;
+}
+
+.t2-place__done:disabled,
+.t2-time__confirm:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Выбор времени */
+.t2-time {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.t2-time__prompt {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 400;
+  text-align: center;
+  color: var(--text);
+}
+
+.t2-time__slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.t2-time__slot {
+  appearance: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  color: var(--text-muted);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.t2-time__slot--active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.t2-final {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.t2-final__text {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+/* ============================================================
+   Шаблон 3 — «Той / праздник»
+   ============================================================ */
+.t3-cover {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: 70dvh;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: linear-gradient(160deg, var(--bg-secondary), var(--accent-decor));
+}
+
+.t3-cover--photo {
+  background-size: cover;
+  background-position: center;
+}
+
+.t3-cover__inner {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 2rem 1.5rem;
+  background: linear-gradient(to top, rgba(61, 44, 42, 0.7), transparent);
+}
+
+.t3-cover__title {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  font-weight: 400;
+  line-height: 1.3;
+  text-align: center;
+  color: var(--text-on-cta);
+}
+
+.t3-cover__open {
+  font-size: 0.85rem;
+  padding: 0.8rem 2rem;
+}
+
+.t3-details {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
+  width: 100%;
+}
+
+.t3-details__invite {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.t3-details__meta {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.t3-details__map {
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.t3-details__dresscode {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.t3-details__confirm {
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.t3-rsvp {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.85rem;
+  width: 100%;
+}
+
+.t3-rsvp__name,
+.t3-rsvp__guests {
+  appearance: none;
+  font: inherit;
+  font-size: 0.85rem;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius-chip);
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  outline: none;
+}
+
+.t3-rsvp__name::placeholder,
+.t3-rsvp__guests::placeholder {
+  color: var(--text-muted);
+}
+
+.t3-rsvp__name:focus,
+.t3-rsvp__guests:focus {
+  border-color: var(--accent);
+}
+
+.t3-rsvp__choice {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.t3-rsvp__attend,
+.t3-rsvp__decline {
+  flex: 1;
+  font-size: 0.85rem;
+}
+
+.t3-rsvp__decline {
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--text-muted);
+}
+
+.t3-rsvp__attend--active {
+  outline: 2px solid var(--bg-secondary);
+  outline-offset: 2px;
+}
+
+.t3-rsvp__decline--active {
+  border-color: var(--accent-decor);
+  color: var(--accent-decor);
+}
+
+.t3-rsvp__submit {
+  align-self: center;
+  font-size: 0.85rem;
+}
+
+.t3-rsvp__submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.t3-final {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.t3-final__text {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+/* ============================================================
+   Preview pane (create page)
+   ============================================================ */
+.preview-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.preview-pane__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.preview-pane__hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.preview-pane__restart {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 5px 12px;
+}
+
+.preview-pane__device {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: var(--bg);
+  height: 640px;
+  max-height: 70vh;
+  overflow-y: auto;
+  /* Preview device не получает декоративный фон, просто рамка */
+}
+
+.preview-pane__device .invitation-runtime {
+  min-height: 640px;
+  /* В preview — без внешней тени, она уже от device */
+  box-shadow: none;
+}
+
+/* Страница приглашения — fullscreen, скрывает шапку приложения */
+.invitation-page {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--bg);
+  overflow-y: auto;
+}

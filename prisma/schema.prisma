@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Author {
+  id             String           @id @default(cuid())
+  email          String?          @unique
+  telegramChatId String?          @unique
+  createdAt      DateTime         @default(now())
+  invitations    Invitation[]
+  magicLinks     MagicLinkToken[]
+}
+
+model MagicLinkToken {
+  id         String    @id @default(cuid())
+  authorId   String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+  author     Author    @relation(fields: [authorId], references: [id])
+
+  @@index([authorId])
+}
+
+model Invitation {
+  id          String           @id @default(cuid())
+  authorId    String
+  templateId  String
+  themeId     String
+  tier        Tier             @default(BASIC)
+  status      InvitationStatus @default(DRAFT)
+  data        Json
+  token       String?          @unique
+  expiresAt   DateTime?
+  oneTimeView Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  activatedAt DateTime?
+  author      Author           @relation(fields: [authorId], references: [id])
+  opens       OpenEvent[]
+  payment     Payment?
+  responses   Response[]
+}
+
+model OpenEvent {
+  id           String     @id @default(cuid())
+  invitationId String
+  openedAt     DateTime   @default(now())
+  userAgent    String?
+  invitation   Invitation @relation(fields: [invitationId], references: [id])
+}
+
+model Response {
+  id           String     @id @default(cuid())
+  invitationId String
+  guestName    String?
+  guestKey     String?
+  outcome      Json
+  createdAt    DateTime   @default(now())
+  invitation   Invitation @relation(fields: [invitationId], references: [id])
+
+  @@unique([invitationId, guestKey])
+}
+
+model Payment {
+  id           String        @id @default(cuid())
+  invitationId String        @unique
+  provider     String
+  sessionId    String        @unique
+  status       PaymentStatus @default(PENDING)
+  amount       Int
+  tier         Tier
+  createdAt    DateTime      @default(now())
+  invitation   Invitation    @relation(fields: [invitationId], references: [id])
+}
+
+model NotificationOutbox {
+  id           String       @id @default(cuid())
+  authorId     String
+  invitationId String
+  type         String
+  payload      Json
+  status       OutboxStatus @default(PENDING)
+  attempts     Int          @default(0)
+  lastError    String?
+  createdAt    DateTime     @default(now())
+  sentAt       DateTime?
+}
+
+enum Tier {
+  BASIC
+  PREMIUM
+}
+
+enum InvitationStatus {
+  DRAFT
+  PENDING_PAYMENT
+  ACTIVE
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+enum OutboxStatus {
+  PENDING
+  SENT
+  FAILED
+}

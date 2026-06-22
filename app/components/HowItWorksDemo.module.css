@@ -1,0 +1,386 @@
+/* ══════════════════════════════════════
+   Обёртка демо
+══════════════════════════════════════ */
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 0 16px;
+}
+
+/* Прогресс-точки */
+.progress {
+  display: flex;
+  gap: 8px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: all 0.3s ease;
+}
+
+.dot--active {
+  background: var(--accent);
+  width: 24px;
+  border-radius: 999px;
+}
+
+.dot--done {
+  background: var(--accent-decor);
+  opacity: 0.5;
+}
+
+/* ══════════════════════════════════════
+   Мок-телефон
+══════════════════════════════════════ */
+.phone {
+  width: 220px;
+  height: 380px;
+  background: #fff;
+  border: 2px solid var(--border);
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(232, 98, 90, 0.14), 0 2px 8px rgba(61, 44, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Строка статуса (имитация) */
+.phoneBar {
+  height: 24px;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.phoneBarDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-decor);
+  opacity: 0.5;
+}
+
+/* Экран с переключением */
+.screen {
+  flex: 1;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 14px;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.screen--in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.screen--out {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+/* ══════════════════════════════════════
+   Подпись сцены
+══════════════════════════════════════ */
+.caption {
+  font-size: 14px;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 260px;
+  line-height: 1.5;
+  transition: opacity 0.3s ease;
+}
+
+.caption strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.caption--in { opacity: 1; }
+.caption--out { opacity: 0; }
+
+/* ══════════════════════════════════════
+   Сцена 1 — Выбор шаблона
+══════════════════════════════════════ */
+.scene1 {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.s1Label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.s1Cards {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.s1Card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: #fff;
+  cursor: default;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.s1Card--active {
+  border-color: var(--accent);
+  background: rgba(232, 98, 90, 0.04);
+  transform: scale(1.02);
+}
+
+.s1Emoji {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.s1Name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+/* ══════════════════════════════════════
+   Сцена 2 — Заполнение формы
+══════════════════════════════════════ */
+.scene2 {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.s2Label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.s2Form {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.s2Field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.s2FieldLabel {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.s2FieldValue {
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  padding: 5px 8px;
+  font-size: 13px;
+  color: var(--text);
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+}
+
+/* Мигающий курсор */
+.s2Cursor {
+  display: inline-block;
+  color: var(--accent);
+  font-weight: 400;
+  margin-left: 1px;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ══════════════════════════════════════
+   Сцена 3 — Сценарий у адресата
+══════════════════════════════════════ */
+.scene3 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.s3Heart {
+  font-size: 44px;
+  line-height: 1;
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  30% { transform: scale(1.15); }
+  60% { transform: scale(1.05); }
+}
+
+.s3Greeting {
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.s3Text {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.4;
+  padding: 0 8px;
+}
+
+.s3Buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.s3Yes {
+  appearance: none;
+  border: none;
+  background: var(--accent);
+  color: #FBEAE6;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: default;
+  animation: yesGrow 1.5s ease-in-out infinite;
+}
+
+@keyframes yesGrow {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+.s3No {
+  appearance: none;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: default;
+  animation: noShift 3s ease-in-out infinite;
+}
+
+@keyframes noShift {
+  0%, 40%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(12px, -6px); }
+  60% { transform: translate(-8px, 4px); }
+  70% { transform: translate(6px, -3px); }
+}
+
+/* ══════════════════════════════════════
+   Сцена 4 — Telegram-уведомление
+══════════════════════════════════════ */
+.scene4 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.s4App {
+  width: 100%;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1.5px solid var(--border);
+  box-shadow: 0 4px 16px rgba(61, 44, 42, 0.08);
+  animation: slideIn 0.4s ease;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.s4AppBar {
+  background: #2AABEE;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.s4BotIcon {
+  font-size: 16px;
+}
+
+.s4BotName {
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.s4Message {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.s4MsgText {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.s4MsgSub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.s4MsgTime {
+  font-size: 10px;
+  color: var(--text-muted);
+  align-self: flex-end;
+}
+
+.s4Caption {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
