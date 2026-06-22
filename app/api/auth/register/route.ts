@@ -1,4 +1,3 @@
-import { env } from '@/lib/env';
 import { hashPassword } from '@/lib/auth/password';
 import { authorRepo } from '@/lib/repositories';
 import { logger } from '@/lib/logger';
@@ -14,6 +13,11 @@ function isValidEmail(value: unknown): value is string {
   return typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
+function getOrigin(request: Request): string {
+  const url = new URL(request.url);
+  return url.origin;
+}
+
 function serializeCookie(
   name: string,
   value: string,
@@ -27,6 +31,7 @@ function serializeCookie(
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const origin = getOrigin(request);
   const contentType = request.headers.get('content-type') ?? '';
   let email: unknown;
   let password: unknown;
@@ -58,14 +63,14 @@ export async function POST(request: Request): Promise<Response> {
 
   if (!isValidEmail(email)) {
     if (!contentType.includes('application/json')) {
-      return Response.redirect(new URL('/login?error=invalid_email&tab=register', env.appUrl), 303);
+      return Response.redirect(new URL('/login?error=invalid_email&tab=register', origin), 303);
     }
     return Response.json({ error: 'Введите корректный email' }, { status: 400 });
   }
 
   if (typeof password !== 'string' || password.length < 6) {
     if (!contentType.includes('application/json')) {
-      return Response.redirect(new URL('/login?error=weak_password&tab=register', env.appUrl), 303);
+      return Response.redirect(new URL('/login?error=weak_password&tab=register', origin), 303);
     }
     return Response.json({ error: 'Пароль должен быть минимум 6 символов' }, { status: 400 });
   }
@@ -75,7 +80,7 @@ export async function POST(request: Request): Promise<Response> {
   const existing = await authorRepo.findByEmail(normalizedEmail);
   if (existing) {
     if (!contentType.includes('application/json')) {
-      return Response.redirect(new URL('/login?error=email_taken&tab=register', env.appUrl), 303);
+      return Response.redirect(new URL('/login?error=email_taken&tab=register', origin), 303);
     }
     return Response.json({ error: 'Этот email уже зарегистрирован' }, { status: 409 });
   }
@@ -87,8 +92,8 @@ export async function POST(request: Request): Promise<Response> {
 
   const sessionToken = await issueSessionToken(author.id);
   const dest = redirectAfter
-    ? new URL(redirectAfter, env.appUrl)
-    : new URL('/me/invitations', env.appUrl);
+    ? new URL(redirectAfter, origin)
+    : new URL('/me/invitations', origin);
 
   if (!contentType.includes('application/json')) {
     const cookie = serializeCookie(SESSION_COOKIE_NAME, sessionToken, sessionCookieOptions());

@@ -1,4 +1,3 @@
-import { env } from '@/lib/env';
 import { verifyPassword } from '@/lib/auth/password';
 import { authorRepo } from '@/lib/repositories';
 import { logger } from '@/lib/logger';
@@ -9,6 +8,11 @@ import {
 } from '@/lib/auth';
 
 export const runtime = 'nodejs';
+
+function getOrigin(request: Request): string {
+  const url = new URL(request.url);
+  return url.origin;
+}
 
 function serializeCookie(
   name: string,
@@ -23,6 +27,7 @@ function serializeCookie(
 }
 
 export async function POST(request: Request): Promise<Response> {
+  const origin = getOrigin(request);
   const contentType = request.headers.get('content-type') ?? '';
   let email: unknown;
   let password: unknown;
@@ -56,7 +61,7 @@ export async function POST(request: Request): Promise<Response> {
 
   if (typeof email !== 'string' || typeof password !== 'string') {
     if (!contentType.includes('application/json')) {
-      return Response.redirect(new URL('/login?error=invalid_credentials', env.appUrl), 303);
+      return Response.redirect(new URL('/login?error=invalid_credentials', origin), 303);
     }
     return Response.json({ error: GENERIC_ERROR }, { status: 401 });
   }
@@ -66,7 +71,7 @@ export async function POST(request: Request): Promise<Response> {
 
   if (!author || !author.passwordHash) {
     if (!contentType.includes('application/json')) {
-      return Response.redirect(new URL('/login?error=invalid_credentials', env.appUrl), 303);
+      return Response.redirect(new URL('/login?error=invalid_credentials', origin), 303);
     }
     return Response.json({ error: GENERIC_ERROR }, { status: 401 });
   }
@@ -74,7 +79,7 @@ export async function POST(request: Request): Promise<Response> {
   const valid = await verifyPassword(password, author.passwordHash);
   if (!valid) {
     if (!contentType.includes('application/json')) {
-      return Response.redirect(new URL('/login?error=invalid_credentials', env.appUrl), 303);
+      return Response.redirect(new URL('/login?error=invalid_credentials', origin), 303);
     }
     return Response.json({ error: GENERIC_ERROR }, { status: 401 });
   }
@@ -83,8 +88,8 @@ export async function POST(request: Request): Promise<Response> {
 
   const sessionToken = await issueSessionToken(author.id);
   const dest = redirectAfter
-    ? new URL(redirectAfter, env.appUrl)
-    : new URL('/me/invitations', env.appUrl);
+    ? new URL(redirectAfter, origin)
+    : new URL('/me/invitations', origin);
 
   if (!contentType.includes('application/json')) {
     const cookie = serializeCookie(SESSION_COOKIE_NAME, sessionToken, sessionCookieOptions());
