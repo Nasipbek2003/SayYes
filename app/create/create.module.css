@@ -1,66 +1,294 @@
-/* Форма создания приглашения — дизайн «Тёплый персик» */
+/* ═══════════════════════════════════════
+   Wizard — стиль «розовый / onlyteplo»
+═══════════════════════════════════════ */
 
-.page {
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: 32px 20px 64px;
-  background: var(--bg);
+.wizard {
+  min-height: 100dvh;
+  background: #FEF0F0;
+  display: flex;
+  flex-direction: column;
 }
 
-.topbar {
+/* ─── Прогресс-бар ─── */
+.progressBar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 24px;
+  justify-content: center;
+  gap: 0;
+  padding: 28px 20px 20px;
+  max-width: 560px;
+  margin: 0 auto;
+  width: 100%;
 }
 
-.back {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--accent);
+.progressLine {
+  flex: 1;
+  height: 3px;
+  background: #F5C6C6;
+  border-radius: 2px;
 }
 
-.saveStatus {
-  font-size: 12px;
-  color: var(--text-muted);
+.progressLineDone {
+  background: #E95B8B;
 }
 
-.heading {
-  font-family: var(--font-serif);
-  font-size: 26px;
-  font-weight: 400;
-  color: var(--text);
-  margin-bottom: 4px;
-}
-
-.subheading {
+.progressDot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 14px;
-  color: var(--text-muted);
-  margin-bottom: 24px;
-  line-height: 1.5;
+  font-weight: 600;
+  flex-shrink: 0;
+  transition: background 0.2s, color 0.2s;
+  background: #F5C6C6;
+  color: #D4A0A0;
 }
 
-/* Двухколоночный лейаут */
-.layout {
+.progressDotActive {
+  background: #E95B8B;
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(233, 91, 139, 0.35);
+}
+
+.progressDotDone {
+  background: #E95B8B;
+  color: #fff;
+}
+
+/* ─── Контент шага ─── */
+.stepContent {
+  flex: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  width: 100%;
+}
+
+/* ─── Шаг 1: Приветствие ─── */
+.welcomeLayout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
-  gap: 28px;
-  align-items: start;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+  min-height: 60vh;
 }
 
-@media (max-width: 860px) {
-  .layout {
+@media (max-width: 768px) {
+  .welcomeLayout {
     grid-template-columns: 1fr;
+    gap: 24px;
+    min-height: auto;
+    padding-top: 20px;
   }
 }
 
-.form {
+.welcomeImage {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 18px;
+  justify-content: center;
 }
 
+.welcomePhone {
+  width: 280px;
+  height: 440px;
+  background: #fff;
+  border: 3px solid #F5C6C6;
+  border-radius: 36px;
+  padding: 12px;
+  box-shadow: 0 20px 60px rgba(233, 91, 139, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.welcomePhoneEmoji {
+  font-size: 56px;
+  line-height: 1;
+}
+
+.welcomePhoneText {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  color: #3D2C2A;
+}
+
+.welcomePhoneSub {
+  font-size: 12px;
+  color: #8A736C;
+}
+
+.welcomeRight {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: #fff;
+  border-radius: 24px;
+  padding: 48px 40px;
+  border: 1.5px solid #F5C6C6;
+}
+
+@media (max-width: 768px) {
+  .welcomeRight {
+    padding: 32px 24px;
+  }
+}
+
+.welcomeTitle {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  font-weight: 400;
+  color: #3D2C2A;
+  line-height: 1.25;
+}
+
+@media (max-width: 768px) {
+  .welcomeTitle { font-size: 24px; }
+}
+
+.welcomeAccent {
+  color: #E95B8B;
+  font-weight: 700;
+  display: block;
+  font-size: 38px;
+  margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+  .welcomeAccent { font-size: 28px; }
+}
+
+.welcomeSubtitle {
+  font-size: 15px;
+  color: #8A736C;
+  line-height: 1.55;
+}
+
+.welcomeQuestion {
+  font-size: 15px;
+  color: #3D2C2A;
+  text-align: center;
+}
+
+.welcomeActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ─── Кнопки ─── */
+.btnPrimary {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: #E95B8B;
+  padding: 14px 36px;
+  border-radius: 999px;
+  transition: background 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.btnPrimary:hover {
+  background: #D44A7A;
+}
+
+.btnPrimary:active {
+  transform: scale(0.97);
+}
+
+.btnPrimary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btnSecondary {
+  appearance: none;
+  border: 1.5px solid #E0C8C8;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 500;
+  color: #8A736C;
+  background: #F0DEDE;
+  padding: 14px 36px;
+  border-radius: 999px;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.btnSecondary:hover {
+  border-color: #E95B8B;
+  color: #E95B8B;
+}
+
+.btnBack {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: #8A736C;
+  background: transparent;
+  padding: 14px 24px;
+  border-radius: 999px;
+  transition: color 0.15s;
+}
+
+.btnBack:hover {
+  color: #E95B8B;
+}
+
+/* ─── Шаги 2-3: Форма ─── */
+.formStep {
+  max-width: 560px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 24px;
+  padding: 40px 36px;
+  border: 1.5px solid #F5C6C6;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (max-width: 600px) {
+  .formStep { padding: 28px 20px; }
+}
+
+.stepTitle {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 400;
+  color: #3D2C2A;
+  text-align: center;
+}
+
+.stepDesc {
+  font-size: 14px;
+  color: #8A736C;
+  text-align: center;
+  margin-top: -12px;
+}
+
+.stepActions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* ─── Поля формы ─── */
 .field {
   display: flex;
   flex-direction: column;
@@ -70,11 +298,11 @@
 .label {
   font-size: 13px;
   font-weight: 500;
-  color: var(--text);
+  color: #3D2C2A;
 }
 
 .optional {
-  color: var(--text-muted);
+  color: #8A736C;
   font-weight: 400;
 }
 
@@ -84,13 +312,13 @@
   font: inherit;
   font-size: 14px;
   width: 100%;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1.5px solid var(--border);
-  background: var(--card);
-  color: var(--text);
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1.5px solid #F0DEDE;
+  background: #FEF7F7;
+  color: #3D2C2A;
   outline: none;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s;
 }
 
 .textarea {
@@ -100,17 +328,18 @@
 
 .input:focus,
 .textarea:focus {
-  border-color: var(--accent);
+  border-color: #E95B8B;
+  background: #fff;
 }
 
 .input--error,
 .textarea--error {
-  border-color: var(--accent);
+  border-color: #E95B8B;
 }
 
 .error {
   font-size: 12px;
-  color: var(--accent);
+  color: #E95B8B;
 }
 
 .checkboxRow {
@@ -120,12 +349,12 @@
 }
 
 .checkbox {
-  width: 17px;
-  height: 17px;
-  accent-color: var(--accent);
+  width: 18px;
+  height: 18px;
+  accent-color: #E95B8B;
 }
 
-/* Загрузка фото */
+/* ─── Фото ─── */
 .imageField {
   display: flex;
   flex-direction: column;
@@ -137,7 +366,7 @@
   height: 96px;
   object-fit: cover;
   border-radius: 50%;
-  border: 2px solid var(--bg-secondary);
+  border: 3px solid #F5C6C6;
 }
 
 .uploadBtn {
@@ -146,20 +375,20 @@
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  padding: 8px 16px;
+  padding: 9px 18px;
   border-radius: 999px;
-  border: 1.5px solid var(--border);
-  background: transparent;
-  color: var(--text-muted);
+  border: 1.5px solid #F0DEDE;
+  background: #FEF7F7;
+  color: #8A736C;
   transition: border-color 0.15s, color 0.15s;
 }
 
 .uploadBtn:hover {
-  border-color: var(--accent-decor);
-  color: var(--accent-decor);
+  border-color: #E95B8B;
+  color: #E95B8B;
 }
 
-/* Редактор мест */
+/* ─── Места ─── */
 .places {
   display: flex;
   flex-direction: column;
@@ -171,9 +400,9 @@
   flex-direction: column;
   gap: 8px;
   padding: 14px;
-  border-radius: var(--radius-chip);
-  border: 1.5px solid var(--border);
-  background: var(--bg);
+  border-radius: 14px;
+  border: 1.5px solid #F0DEDE;
+  background: #FEF7F7;
 }
 
 .placeHead {
@@ -185,7 +414,7 @@
 .placeTitle {
   font-size: 12px;
   font-weight: 500;
-  color: var(--text-muted);
+  color: #8A736C;
 }
 
 .removeBtn {
@@ -194,7 +423,7 @@
   cursor: pointer;
   border: none;
   background: transparent;
-  color: var(--accent);
+  color: #E95B8B;
 }
 
 .addBtn {
@@ -203,24 +432,33 @@
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  padding: 8px 16px;
+  padding: 9px 18px;
   border-radius: 999px;
-  border: 1.5px dashed var(--border);
+  border: 1.5px dashed #F0DEDE;
   background: transparent;
-  color: var(--text-muted);
+  color: #8A736C;
   transition: border-color 0.15s, color 0.15s;
 }
 
 .addBtn:hover {
-  border-color: var(--accent-decor);
-  color: var(--accent-decor);
+  border-color: #E95B8B;
+  color: #E95B8B;
 }
 
-/* Выбор тарифа */
+/* ─── Шаг 4: Превью ─── */
+.previewStep {
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ─── Шаг 5: Тарифы ─── */
 .tiers {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 14px;
 }
 
 @media (max-width: 520px) {
@@ -233,95 +471,73 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 16px;
-  border-radius: var(--radius-chip);
-  border: 1.5px solid var(--border);
-  background: var(--card);
-  color: var(--text);
+  padding: 20px;
+  border-radius: 16px;
+  border: 2px solid #F0DEDE;
+  background: #fff;
+  color: #3D2C2A;
   font: inherit;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .tier:hover {
-  border-color: var(--accent-decor);
+  border-color: #E95B8B;
 }
 
-.tier--active {
-  border-color: var(--accent);
-  background: rgba(232, 98, 90, 0.04);
+.tierActive {
+  border-color: #E95B8B;
+  background: rgba(233, 91, 139, 0.04);
+  box-shadow: 0 4px 20px rgba(233, 91, 139, 0.15);
 }
 
 .tierName {
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+  color: #3D2C2A;
 }
 
 .tierPrice {
   font-family: var(--font-serif);
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 400;
-  color: var(--accent);
+  color: #E95B8B;
 }
 
 .tierFeatures {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
+  font-size: 13px;
+  color: #8A736C;
+}
+
+/* ─── Статусы ─── */
+.saveStatus {
   font-size: 12px;
-  color: var(--text-muted);
-}
-
-.actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 8px;
-}
-
-.checkoutBtn {
-  font: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 13px 24px;
-  border-radius: var(--radius-btn);
-  border: none;
-  background: var(--accent);
-  color: var(--text-on-cta);
-  transition: background 0.15s;
-}
-
-.checkoutBtn:hover {
-  background: #d9534c;
-}
-
-.checkoutBtn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
+  color: #8A736C;
+  text-align: center;
 }
 
 .notice {
   font-size: 13px;
-  padding: 10px 12px;
-  border-radius: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
   line-height: 1.45;
+  text-align: center;
 }
 
-.notice--error {
-  background: rgba(232, 98, 90, 0.08);
-  color: var(--accent);
-  border: 1px solid rgba(232, 98, 90, 0.2);
+.noticeError {
+  background: rgba(233, 91, 139, 0.08);
+  color: #E95B8B;
+  border: 1px solid rgba(233, 91, 139, 0.2);
 }
 
-.notice--info {
-  background: rgba(255, 217, 194, 0.35);
-  color: var(--text-muted);
+.noticeInfo {
+  background: rgba(245, 198, 198, 0.3);
+  color: #8A736C;
 }
 
-/* Превью */
-.previewCol {
-  position: sticky;
-  top: 20px;
-}
+/* Удалены старые классы: page, topbar, back, heading, subheading, layout, previewCol, checkoutBtn */
+/* Старые .tier--active заменён на .tierActive */
+/* .notice--error / .notice--info → .noticeError / .noticeInfo */
