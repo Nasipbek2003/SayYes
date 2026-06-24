@@ -46,6 +46,7 @@ const SCREEN1_IMAGES = ['/1.webp', '/2.webp', '/3.webp', '/4.webp'];
 const SCREEN2_IMAGES = ['/5.webp', '/6.webp', '/7.webp', '/8.webp'];
 
 const TOTAL_STEPS = 3;
+const STEP_LABELS = ['Начало', 'Редактор', 'Готово'];
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
 export function CreateForm({ template, themeId }: CreateFormProps) {
@@ -201,14 +202,21 @@ export function CreateForm({ template, themeId }: CreateFormProps) {
       <span className={`${styles.petal} ${styles.petal4}`} aria-hidden="true" />
 
       <div className={styles.progressBar}>
-        {Array.from({ length: TOTAL_STEPS }, (_, i) => {
+        {STEP_LABELS.map((label, i) => {
           const n = i + 1;
+          const isActive = n === step;
+          const isDone = n < step;
           return (
-            <span key={n}>
-              {i > 0 && <span className={`${styles.progressLine} ${n <= step ? styles.progressLineDone : ''}`} />}
-              <span className={`${styles.progressDot} ${n === step ? styles.progressDotActive : ''} ${n < step ? styles.progressDotDone : ''}`}>
-                {n}
-              </span>
+            <span key={n} style={{ display: 'contents' }}>
+              {i > 0 && <span className={`${styles.progressLine} ${isDone || isActive ? styles.progressLineDone : ''}`} />}
+              <div className={styles.progressStep}>
+                <span className={`${styles.progressDot} ${isActive ? styles.progressDotActive : ''} ${isDone ? styles.progressDotDone : ''}`}>
+                  {isDone ? '✓' : n}
+                </span>
+                <span className={`${styles.progressLabel} ${isActive ? styles.progressLabelActive : ''} ${isDone ? styles.progressLabelDone : ''}`}>
+                  {label}
+                </span>
+              </div>
             </span>
           );
         })}

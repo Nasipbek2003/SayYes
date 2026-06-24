@@ -37,14 +37,17 @@
 .progressBar {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 0;
-  padding: 32px 20px 24px;
-  max-width: 560px;
+  padding: 36px 40px 28px;
+  max-width: 680px;
   margin: 0 auto;
   width: 100%;
   position: relative;
   z-index: 2;
+}
+
+@media (max-width: 600px) {
+  .progressBar { padding: 28px 24px 20px; }
 }
 
 .progressLine {
@@ -52,6 +55,7 @@
   height: 3px;
   background: #F5C6C6;
   border-radius: 2px;
+  transition: background 0.3s;
 }
 
 .progressLineDone {
@@ -59,29 +63,58 @@
 }
 
 .progressDot {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   flex-shrink: 0;
-  transition: background 0.2s, color 0.2s;
-  background: #F5C6C6;
+  transition: background 0.3s, color 0.3s, transform 0.3s, box-shadow 0.3s;
+  background: rgba(245, 198, 198, 0.5);
   color: #D4A0A0;
+  border: 2px solid transparent;
 }
 
 .progressDotActive {
   background: #E95B8B;
   color: #fff;
-  box-shadow: 0 2px 12px rgba(233, 91, 139, 0.35);
+  transform: scale(1.1);
+  box-shadow: 0 4px 18px rgba(233, 91, 139, 0.4);
 }
 
 .progressDotDone {
   background: #E95B8B;
   color: #fff;
+  border-color: rgba(233, 91, 139, 0.3);
+}
+
+.progressLabel {
+  font-size: 11px;
+  font-weight: 500;
+  color: #D4A0A0;
+  text-align: center;
+  margin-top: 6px;
+  white-space: nowrap;
+  transition: color 0.3s;
+}
+
+.progressLabelActive {
+  color: #E95B8B;
+  font-weight: 600;
+}
+
+.progressLabelDone {
+  color: #C77090;
+}
+
+.progressStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 /* ─── Контент шага ─── */
