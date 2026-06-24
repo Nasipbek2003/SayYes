@@ -266,6 +266,115 @@ a {
 }
 
 /* ============================================================
+   Шаблон «mission-date» — шпионское досье
+   ============================================================ */
+.mi-intro {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.75rem;
+  padding: 2rem;
+  background: #1A1A2E;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  min-height: 70dvh;
+  justify-content: center;
+}
+
+/* Бегущая сканирующая линия */
+.mi-scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #00FF88 50%, transparent 100%);
+  opacity: 0.6;
+  animation: miScan 3s linear infinite;
+}
+
+@keyframes miScan {
+  0% { top: 0; }
+  100% { top: 100%; }
+}
+
+/* Штамп «СОВЕРШЕННО СЕКРЕТНО» */
+.mi-stamp {
+  font-family: var(--font-sans);
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #FF3B3B;
+  border: 3px solid #FF3B3B;
+  padding: 0.5rem 1.5rem;
+  border-radius: 4px;
+  transform: rotate(-3deg);
+  text-align: center;
+}
+
+.mi-intro__text {
+  font-size: 1rem;
+  color: #B0C4B1;
+  text-align: center;
+  line-height: 1.5;
+  font-family: var(--font-sans);
+}
+
+.mi-intro__btn {
+  background: #00CC6A;
+  color: #0D0D1A;
+  font-weight: 600;
+  border: none;
+  padding: 0.9rem 2rem;
+}
+
+.mi-intro__btn:hover {
+  background: #00E676;
+}
+
+/* Досье и финал — тёмный стиль для mission-date */
+[data-template="mission-date"] .screen {
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 50%, rgba(0, 204, 106, 0.06) 0%, transparent 70%),
+    #16213E;
+}
+
+[data-template="mission-date"] .screen__heading {
+  color: #E0FFE0;
+}
+
+[data-template="mission-date"] .screen__text {
+  color: #8BAEA0;
+}
+
+[data-template="mission-date"] .screen__button {
+  background: #00CC6A;
+  color: #0D0D1A;
+  font-weight: 600;
+}
+
+[data-template="mission-date"] .screen__button:hover {
+  background: #00E676;
+}
+
+[data-template="mission-date"] .runaway__no {
+  border-color: #2A3B55;
+  color: #607B8B;
+}
+
+[data-template="mission-date"] .da-image {
+  border-radius: 4px;
+  border: 2px solid #2A3B55;
+}
+
+[data-template="mission-date"] .t1-final__text {
+  color: #C8E6C9;
+}
+
+/* ============================================================
    Шаблон «secret-letter» — анимированный конверт
    ============================================================ */
 .sl-intro {

@@ -19,6 +19,7 @@
  * and the runtime/API simply have no templates to offer.
  */
 import { dateAsk } from './date-ask';
+import { missionDate } from './mission-date';
 import { secretLetter } from './secret-letter';
 import { eventRsvp } from './event-rsvp';
 import { simpleDate } from './simple-date';
@@ -29,10 +30,11 @@ import type { TemplateSchema } from './types';
 export const templateSchemas: TemplateSchema[] = [
   dateAsk,
   secretLetter,
+  missionDate,
   simpleDate,
   storyFork,
   eventRsvp,
 ];
 
 /** Only templates shown in the gallery for new invitations. */
-export const gallerySchemas: TemplateSchema[] = [dateAsk, secretLetter];
+export const gallerySchemas: TemplateSchema[] = [dateAsk, secretLetter, missionDate];

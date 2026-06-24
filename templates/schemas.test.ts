@@ -67,6 +67,7 @@ describe('template registration', () => {
     expect(templateSchemas.map((s) => s.id)).toEqual([
       'date-ask',
       'secret-letter',
+      'mission-date',
       'simple-date',
       'story-fork',
       'event-rsvp',

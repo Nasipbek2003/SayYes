@@ -767,7 +767,58 @@ function EventRsvpConfirmation({ screen, vars }: ScreenProps): ReactNode {
  * via {@link ElementList}; each is a distinct component so tasks 8.x can flesh
  * out the template-specific UI per kind without touching the renderer mapping.
  */
+/**
+ * Шаблон «mission-date» — экран 1 «Секретная папка». Тёмный фон,
+ * мигающий гриф «СОВЕРШЕННО СЕКРЕТНО», сканирующая линия, пульсирующая
+ * кнопка «Принять миссию 🔓».
+ */
+function MissionDateIntro({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const text = screen.elements.find((el) => el.kind === 'text');
+  const button = screen.elements.find((el) => el.kind === 'button');
+  const openAction = button?.action ?? 'click:open';
+
+  return (
+    <ScreenShell kind="intro" screenId={screen.id}>
+      <div className="mi-intro">
+        <div className="mi-scanline" aria-hidden />
+        <motion.div
+          className="mi-stamp"
+          initial={{ scale: 2, opacity: 0, rotate: -15 }}
+          animate={{ scale: 1, opacity: 1, rotate: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+        >
+          {substitute(heading?.text, vars) || 'СОВЕРШЕННО СЕКРЕТНО'}
+        </motion.div>
+        <motion.p
+          className="mi-intro__text"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+        >
+          {substitute(text?.text, vars)}
+        </motion.p>
+        <motion.button
+          type="button"
+          className="screen__button mi-intro__btn"
+          data-action={openAction}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, scale: [1, 1.05, 1] }}
+          transition={{
+            opacity: { delay: 0.8, duration: 0.4 },
+            scale: { delay: 1.2, duration: 1.5, repeat: Infinity, ease: 'easeInOut' },
+          }}
+          onClick={() => onAction(openAction)}
+        >
+          {substitute(button?.text, vars) || 'Принять миссию 🔓'}
+        </motion.button>
+      </div>
+    </ScreenShell>
+  );
+}
+
 function IntroScreen(props: ScreenProps): ReactNode {
+  if (props.templateId === 'mission-date') return MissionDateIntro(props);
   if (props.templateId === 'secret-letter') return SecretLetterEnvelope(props);
   if (isSimpleDate(props.templateId)) return SimpleDateIntro(props);
   if (isEventRsvp(props.templateId)) return EventRsvpCover(props);
@@ -897,7 +948,7 @@ function DateAskInvite({ screen, vars, onAction }: ScreenProps): ReactNode {
 }
 
 function InviteScreen(props: ScreenProps): ReactNode {
-  if (props.templateId === 'date-ask' || props.templateId === 'secret-letter') {
+  if (props.templateId === 'date-ask' || props.templateId === 'secret-letter' || props.templateId === 'mission-date') {
     return DateAskInvite(props);
   }
   if (isSimpleDate(props.templateId)) return SimpleDateInvite(props);
@@ -974,7 +1025,7 @@ function DateAskFinal({ screen, vars }: ScreenProps): ReactNode {
 }
 
 function FinalScreen(props: ScreenProps): ReactNode {
-  if (props.templateId === 'date-ask' || props.templateId === 'secret-letter') {
+  if (props.templateId === 'date-ask' || props.templateId === 'secret-letter' || props.templateId === 'mission-date') {
     return DateAskFinal(props);
   }
   if (isSimpleDate(props.templateId)) return SimpleDateFinal(props);
