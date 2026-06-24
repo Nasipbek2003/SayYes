@@ -19,13 +19,20 @@
  * and the runtime/API simply have no templates to offer.
  */
 import { dateAsk } from './date-ask';
+import { secretLetter } from './secret-letter';
 import { eventRsvp } from './event-rsvp';
 import { simpleDate } from './simple-date';
 import { storyFork } from './story-fork';
 import type { TemplateSchema } from './types';
 
 /** All schemas — used by the registry (lookup by id for existing invitations). */
-export const templateSchemas: TemplateSchema[] = [dateAsk, simpleDate, storyFork, eventRsvp];
+export const templateSchemas: TemplateSchema[] = [
+  dateAsk,
+  secretLetter,
+  simpleDate,
+  storyFork,
+  eventRsvp,
+];
 
 /** Only templates shown in the gallery for new invitations. */
-export const gallerySchemas: TemplateSchema[] = [dateAsk, storyFork, eventRsvp];
+export const gallerySchemas: TemplateSchema[] = [dateAsk, secretLetter];

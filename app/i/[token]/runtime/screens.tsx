@@ -768,6 +768,7 @@ function EventRsvpConfirmation({ screen, vars }: ScreenProps): ReactNode {
  * out the template-specific UI per kind without touching the renderer mapping.
  */
 function IntroScreen(props: ScreenProps): ReactNode {
+  if (props.templateId === 'secret-letter') return SecretLetterEnvelope(props);
   if (isSimpleDate(props.templateId)) return SimpleDateIntro(props);
   if (isEventRsvp(props.templateId)) return EventRsvpCover(props);
   return (
@@ -778,12 +779,66 @@ function IntroScreen(props: ScreenProps): ReactNode {
 }
 
 /**
- * Шаблон «date-ask» — экраны приглашения и подтверждения. Картинка, заголовок,
- * пара «Да / убегающая Нет» ({@link RunawayButton}): «Да» растёт и ведёт
- * дальше, «Нет» убегает и исчезает после нескольких попыток.
+ * Шаблон «secret-letter» — экран 1 «Конверт». Анимированный запечатанный
+ * конверт с восковой печатью-сердцем и плавающими сердечками; кнопка
+ * «Открыть письмо» раскрывает приглашение (переход к следующему экрану).
+ */
+function SecretLetterEnvelope({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const button = screen.elements.find((el) => el.kind === 'button');
+  const headingText = substitute(heading?.text, vars);
+  const openAction = button?.action ?? 'click:open';
+
+  return (
+    <ScreenShell kind="intro" screenId={screen.id}>
+      <FloatingHearts count={10} />
+      <div className="sl-intro">
+        <motion.div
+          className="sl-envelope"
+          aria-hidden
+          initial={{ scale: 0.85, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: [0, -8, 0] }}
+          transition={{
+            scale: { duration: 0.5 },
+            opacity: { duration: 0.5 },
+            y: { duration: 3, repeat: Infinity, ease: 'easeInOut' },
+          }}
+        >
+          <div className="sl-envelope__body" />
+          <div className="sl-envelope__flap" />
+          <motion.div
+            className="sl-envelope__seal"
+            animate={{ scale: [1, 1.12, 1] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            ♥
+          </motion.div>
+        </motion.div>
+
+        {headingText ? <h1 className="sl-intro__title">{headingText}</h1> : null}
+
+        <motion.button
+          type="button"
+          className="screen__button sl-intro__open"
+          data-action={openAction}
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          onClick={() => onAction(openAction)}
+        >
+          {substitute(button?.text, vars) || 'Открыть письмо 💌'}
+        </motion.button>
+      </div>
+    </ScreenShell>
+  );
+}
+
+/**
+ * Шаблоны «date-ask» / «secret-letter» — экраны приглашения и подтверждения.
+ * Картинка, заголовок, пара «Да / убегающая Нет» ({@link RunawayButton}): «Да»
+ * растёт и ведёт дальше, «Нет» убегает и исчезает после нескольких попыток.
  *
- * На экране 2 (подтверждение): подзаголовок скрыт до нажатия «Да» — после
- * клика появляется с анимацией, и через 1.5 с идёт переход к финалу.
+ * На экране подтверждения подзаголовок скрыт до нажатия «Да» — после клика
+ * появляется с анимацией, и через 1.5 с идёт переход к финалу.
  */
 function DateAskInvite({ screen, vars, onAction }: ScreenProps): ReactNode {
   const image = screen.elements.find((el) => el.kind === 'image');
@@ -796,7 +851,8 @@ function DateAskInvite({ screen, vars, onAction }: ScreenProps): ReactNode {
   const headingText = substitute(heading?.text, vars);
   const subtitleText = substitute(subtitle?.text, vars);
   const yesAction = yesBtn?.action ?? 'click:yes';
-  const isConfirmScreen = screen.id === 'screen-2';
+  // Экран подтверждения — тот, где положительная кнопка ведёт «click:confirm».
+  const isConfirmScreen = (yesAction).includes('confirm');
 
   const [showSubtitle, setShowSubtitle] = useState(false);
 
@@ -841,7 +897,9 @@ function DateAskInvite({ screen, vars, onAction }: ScreenProps): ReactNode {
 }
 
 function InviteScreen(props: ScreenProps): ReactNode {
-  if (props.templateId === 'date-ask') return DateAskInvite(props);
+  if (props.templateId === 'date-ask' || props.templateId === 'secret-letter') {
+    return DateAskInvite(props);
+  }
   if (isSimpleDate(props.templateId)) return SimpleDateInvite(props);
   if (isStoryFork(props.templateId)) return StoryForkInvite(props);
   return (
@@ -916,7 +974,9 @@ function DateAskFinal({ screen, vars }: ScreenProps): ReactNode {
 }
 
 function FinalScreen(props: ScreenProps): ReactNode {
-  if (props.templateId === 'date-ask') return DateAskFinal(props);
+  if (props.templateId === 'date-ask' || props.templateId === 'secret-letter') {
+    return DateAskFinal(props);
+  }
   if (isSimpleDate(props.templateId)) return SimpleDateFinal(props);
   if (isStoryFork(props.templateId)) {
     return isSoftDeclineScreen(props.screen)

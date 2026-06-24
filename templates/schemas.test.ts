@@ -66,6 +66,7 @@ describe('template registration', () => {
   it('registers the MVP templates', () => {
     expect(templateSchemas.map((s) => s.id)).toEqual([
       'date-ask',
+      'secret-letter',
       'simple-date',
       'story-fork',
       'event-rsvp',
