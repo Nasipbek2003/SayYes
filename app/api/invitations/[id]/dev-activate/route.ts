@@ -1,8 +1,8 @@
 /**
  * POST /api/invitations/:id/dev-activate
  *
- * Development-only bypass: activates a draft invitation without payment.
- * Only available when NODE_ENV !== 'production'.
+ * Activates a draft invitation without payment (free activation while
+ * payments are not yet integrated).
  */
 import { authErrorToResponse } from '@/lib/auth';
 import { requireAuthor } from '@/lib/auth/nextCookies';
@@ -15,10 +15,6 @@ export async function POST(
   _request: Request,
   context: { params: Promise<{ id: string }> },
 ): Promise<Response> {
-  if (process.env.NODE_ENV === 'production') {
-    return Response.json({ error: 'Not available in production' }, { status: 403 });
-  }
-
   let authorId: string;
   try {
     authorId = await requireAuthor();

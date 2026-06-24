@@ -15,8 +15,8 @@ export default function PaymentPage() {
 
         <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 400, marginTop: 8 }}>Тарифы</h2>
         <ul style={{ paddingLeft: 20, color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <li><strong style={{ color: 'var(--text)' }}>Базовый</strong> — 990 ₸ за одно приглашение</li>
-          <li><strong style={{ color: 'var(--text)' }}>Премиум</strong> — 1 990 ₸ за одно приглашение</li>
+          <li><strong style={{ color: 'var(--text)' }}>Базовый</strong> — 990 сом за одно приглашение</li>
+          <li><strong style={{ color: 'var(--text)' }}>Премиум</strong> — 1 990 сом за одно приглашение</li>
         </ul>
 
         <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 400, marginTop: 8 }}>Возврат</h2>

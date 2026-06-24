@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Heart } from 'lucide-react';
 
-import type { CheckoutTier } from '@/lib/services/payment';
 import type { PreviewPayload } from '@/lib/services/invitation';
 import type { TemplateField } from '@/templates/types';
 import {
@@ -22,7 +21,6 @@ import {
   createDraft,
   devActivate,
   fetchPreview,
-  startCheckout,
   updateDraft,
   uploadPhoto,
 } from './client';
@@ -47,22 +45,7 @@ export interface CreateFormProps {
 const SCREEN1_IMAGES = ['/1.webp', '/2.webp', '/3.webp', '/4.webp'];
 const SCREEN2_IMAGES = ['/5.webp', '/6.webp', '/7.webp', '/8.webp'];
 
-const TIERS: ReadonlyArray<{ id: CheckoutTier; name: string; price: string; features: string[] }> = [
-  {
-    id: 'basic',
-    name: 'Базовый',
-    price: '990 ₸',
-    features: ['Интерактивное приглашение', 'Уникальная ссылка', 'Подпись SayYes'],
-  },
-  {
-    id: 'premium',
-    name: 'Премиум',
-    price: '1990 ₸',
-    features: ['Без подписи бренда', 'Расширенные анимации', 'Фоновая музыка', 'Уведомления в Telegram'],
-  },
-];
-
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 3;
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
 export function CreateForm({ template, themeId }: CreateFormProps) {
@@ -98,10 +81,9 @@ export function CreateForm({ template, themeId }: CreateFormProps) {
 
   const [invitationId, setInvitationId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('idle');
-  const [tier, setTier] = useState<CheckoutTier>('basic');
   const [preview, setPreview] = useState<PreviewPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [checkingOut, setCheckingOut] = useState(false);
+  const [activating, setActivating] = useState(false);
 
   const invitationIdRef = useRef<string | null>(null);
   invitationIdRef.current = invitationId;
@@ -184,38 +166,21 @@ export function CreateForm({ template, themeId }: CreateFormProps) {
     }
   };
 
-  const onCheckout = async () => {
+  const onActivate = async () => {
     setError(null);
     if (!validation.ok) { setError('Заполни обязательные поля.'); return; }
-    setCheckingOut(true);
+    setActivating(true);
     debouncerRef.current?.flushNow();
     const id = await ensureDraft(data);
-    if (!id) { setCheckingOut(false); return; }
-    try {
-      await updateDraft(id, { data: toPersistedData(data), themeId });
-      const { checkoutUrl } = await startCheckout(id, tier);
-      window.location.href = checkoutUrl;
-    } catch (err) {
-      setCheckingOut(false);
-      if (err instanceof UnauthorizedError) handleAuthError();
-      else setError(err instanceof ApiError ? err.message : 'Не удалось перейти к оплате.');
-    }
-  };
-
-  const onDevActivate = async () => {
-    setError(null);
-    setCheckingOut(true);
-    debouncerRef.current?.flushNow();
-    const id = await ensureDraft(data);
-    if (!id) { setCheckingOut(false); return; }
+    if (!id) { setActivating(false); return; }
     try {
       await updateDraft(id, { data: toPersistedData(data), themeId });
       const { url } = await devActivate(id);
       window.location.href = url;
     } catch (err) {
-      setCheckingOut(false);
+      setActivating(false);
       if (err instanceof UnauthorizedError) handleAuthError();
-      else setError(err instanceof ApiError ? err.message : 'Ошибка активации.');
+      else setError(err instanceof ApiError ? err.message : 'Не удалось создать ссылку.');
     }
   };
 
@@ -467,57 +432,23 @@ export function CreateForm({ template, themeId }: CreateFormProps) {
           </div>
         )}
 
-        {/* ═══ Шаг 3: Предпросмотр ═══ */}
+        {/* ═══ Шаг 3: Предпросмотр + Получить ссылку ═══ */}
         {step === 3 && (
           <div className={styles.previewStep}>
             <h2 className={styles.stepTitle}>Предпросмотр</h2>
             <p className={styles.stepDesc} style={{ marginBottom: 8 }}>Так увидит приглашение адресат</p>
             {preview ? <PreviewPane preview={preview} /> : <p className={`${styles.notice} ${styles.noticeInfo}`}>Загружаем предпросмотр…</p>}
-            <div className={styles.stepActions}>
-              <button className={styles.btnBack} onClick={() => setStep(2)}>← Назад</button>
-              <button className={styles.btnPrimary} onClick={() => setStep(4)}>К оплате →</button>
-            </div>
-          </div>
-        )}
-
-        {/* ═══ Шаг 4: Тариф ═══ */}
-        {step === 4 && (
-          <div className={styles.formStep}>
-            <h2 className={styles.stepTitle}>Выбери тариф</h2>
-            <p className={styles.stepDesc}>Оплата разовая — за одно приглашение</p>
-            <div className={styles.tiers}>
-              {TIERS.map((t) => (
-                <button type="button" key={t.id} className={`${styles.tier} ${tier === t.id ? styles.tierActive : ''}`} onClick={() => setTier(t.id)}>
-                  <span className={styles.tierName}>{t.name}</span>
-                  <span className={styles.tierPrice}>{t.price}</span>
-                  <ul className={styles.tierFeatures}>{t.features.map((f) => <li key={f}>✓ {f}</li>)}</ul>
-                </button>
-              ))}
-            </div>
-            {!validation.ok && <p className={`${styles.notice} ${styles.noticeInfo}`}>Заполни обязательные поля, чтобы перейти к оплате.</p>}
             {error && <p className={`${styles.notice} ${styles.noticeError}`}>{error}</p>}
             <div className={styles.stepActions}>
-              <button className={styles.btnBack} onClick={() => setStep(3)}>← Назад</button>
-              <button className={styles.btnPrimary} onClick={onCheckout} disabled={!validation.ok || checkingOut}>
-                {checkingOut ? 'Переход к оплате…' : 'Оплатить и получить ссылку'}
+              <button className={styles.btnBack} onClick={() => setStep(2)}>← Назад</button>
+              <button
+                className={styles.btnPrimary}
+                onClick={onActivate}
+                disabled={!validation.ok || activating}
+              >
+                {activating ? 'Создаём ссылку…' : 'Получить ссылку'}
               </button>
             </div>
-            {process.env.NODE_ENV !== 'production' && (
-              <button
-                type="button"
-                onClick={onDevActivate}
-                disabled={!validation.ok || checkingOut}
-                style={{
-                  appearance: 'none', font: 'inherit', fontSize: '13px', cursor: 'pointer',
-                  padding: '9px 16px', borderRadius: '999px',
-                  border: '1px dashed rgba(233,91,139,0.3)', background: 'rgba(233,91,139,0.05)',
-                  color: '#E95B8B', alignSelf: 'center',
-                  opacity: (!validation.ok || checkingOut) ? 0.4 : 1,
-                }}
-              >
-                🛠 Без оплаты (dev)
-              </button>
-            )}
           </div>
         )}
       </div>

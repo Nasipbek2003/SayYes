@@ -252,7 +252,7 @@ export default function HomePage() {
           <div className={styles.pricingGrid}>
             <div className={styles.pricingCard}>
               <h3 className={styles.planName}>Базовый</h3>
-              <div className={styles.planPrice}>990 <span>₸</span></div>
+              <div className={styles.planPrice}>990 <span>сом</span></div>
               <ul className={styles.planFeatures}>
                 <li>✓ Интерактивный сценарий</li>
                 <li>✓ Уникальная ссылка</li>
@@ -265,7 +265,7 @@ export default function HomePage() {
             <div className={`${styles.pricingCard} ${styles['pricingCard--featured']}`}>
               <span className={styles.planBadge}>Популярный</span>
               <h3 className={styles.planName}>Премиум</h3>
-              <div className={styles.planPrice}>1 990 <span>₸</span></div>
+              <div className={styles.planPrice}>1 990 <span>сом</span></div>
               <ul className={styles.planFeatures}>
                 <li>✓ Всё из базового</li>
                 <li>✓ Без подписи бренда</li>
