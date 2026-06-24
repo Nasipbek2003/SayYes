@@ -779,8 +779,11 @@ function IntroScreen(props: ScreenProps): ReactNode {
 
 /**
  * Шаблон «date-ask» — экраны приглашения и подтверждения. Картинка, заголовок,
- * (опц.) подзаголовок и пара «Да / убегающая Нет» ({@link RunawayButton}): «Да»
- * растёт и ведёт дальше, «Нет» убегает и исчезает после нескольких попыток.
+ * пара «Да / убегающая Нет» ({@link RunawayButton}): «Да» растёт и ведёт
+ * дальше, «Нет» убегает и исчезает после нескольких попыток.
+ *
+ * На экране 2 (подтверждение): подзаголовок скрыт до нажатия «Да» — после
+ * клика появляется с анимацией, и через 1.5 с идёт переход к финалу.
  */
 function DateAskInvite({ screen, vars, onAction }: ScreenProps): ReactNode {
   const image = screen.elements.find((el) => el.kind === 'image');
@@ -793,6 +796,18 @@ function DateAskInvite({ screen, vars, onAction }: ScreenProps): ReactNode {
   const headingText = substitute(heading?.text, vars);
   const subtitleText = substitute(subtitle?.text, vars);
   const yesAction = yesBtn?.action ?? 'click:yes';
+  const isConfirmScreen = screen.id === 'screen-2';
+
+  const [showSubtitle, setShowSubtitle] = useState(false);
+
+  const handleYes = () => {
+    if (isConfirmScreen && subtitleText) {
+      setShowSubtitle(true);
+      setTimeout(() => onAction(yesAction), 1500);
+    } else {
+      onAction(yesAction);
+    }
+  };
 
   return (
     <ScreenShell kind="invite" screenId={screen.id}>
@@ -803,12 +818,23 @@ function DateAskInvite({ screen, vars, onAction }: ScreenProps): ReactNode {
           <img className="da-image" src={imgSrc} alt="" />
         ) : null}
         {headingText ? <h1 className="screen__heading">{headingText}</h1> : null}
-        {subtitleText ? <p className="screen__text">{subtitleText}</p> : null}
-        <RunawayButton
-          yesLabel={substitute(yesBtn?.text, vars) || 'Да'}
-          noLabel={substitute(noBtn?.text, vars) || 'Нет'}
-          onYes={() => onAction(yesAction)}
-        />
+        {showSubtitle && subtitleText ? (
+          <motion.p
+            className="screen__text"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {subtitleText}
+          </motion.p>
+        ) : null}
+        {!showSubtitle ? (
+          <RunawayButton
+            yesLabel={substitute(yesBtn?.text, vars) || 'Да'}
+            noLabel={substitute(noBtn?.text, vars) || 'Нет'}
+            onYes={handleYes}
+          />
+        ) : null}
       </div>
     </ScreenShell>
   );
