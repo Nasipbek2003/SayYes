@@ -252,6 +252,165 @@
   color: var(--text-muted);
 }
 
+/* Карточки приглашений (list page) */
+.cardList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: border-color 0.15s;
+}
+
+.card:hover {
+  border-color: var(--accent-decor);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cardTitle {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.cardDate {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Блок ссылки */
+.linkBlock {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-chip);
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  flex-wrap: wrap;
+}
+
+.linkUrl {
+  font-size: 13px;
+  color: var(--accent);
+  word-break: break-all;
+  flex: 1;
+  min-width: 0;
+}
+
+.linkDraft {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.copyBtn {
+  appearance: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.copyBtn:hover {
+  background: var(--accent);
+  color: var(--text-on-cta);
+}
+
+/* Статистика в строку */
+.statsRow {
+  display: flex;
+  gap: 12px;
+}
+
+.statBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 18px;
+  border-radius: var(--radius-chip);
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  min-width: 80px;
+}
+
+/* Действия карточки */
+.cardActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.detailLink {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.detailLink:hover {
+  text-decoration: underline;
+}
+
+/* Лента событий (opens / responses) */
+.eventList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.eventCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-chip);
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+}
+
+.eventEmoji {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.eventMain {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.eventMeta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
 /* Danger zone */
 .dangerZone {
   margin-top: 48px;

@@ -1,20 +1,3 @@
-/**
- * Author cabinet — invitation detail (`/me/invitations/[id]`, task 10.3,
- * Requirements 10.2, 10.3, 8.6, 10.4).
- *
- * Server component: gates on an author session and loads the detail via
- * {@link InvitationService.getDetailForAuthor}, which enforces ownership
- * (Requirement 10.4). A request for an invitation the author does not own (403)
- * or that does not exist (404) renders Next's `notFound()` so an author can
- * never see another author's data — we deliberately collapse 403 and 404 to the
- * same "not found" screen so the existence of someone else's invitation is not
- * revealed.
- *
- * The page shows the public link, recorded opens and the guest responses
- * (Requirement 10.2). For the event template it additionally renders the RSVP
- * dashboard with the guest list and the headline totals — придёт / не придёт /
- * всего человек (Requirements 8.6, 10.3).
- */
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
@@ -29,6 +12,7 @@ import type {
   CabinetStatus,
 } from '@/lib/services/invitation';
 
+import { CopyLinkButton } from '../CabinetActions';
 import styles from '../cabinet.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -46,6 +30,16 @@ const RSVP_LABEL: Record<'yes' | 'no' | 'unknown', string> = {
   unknown: '—',
 };
 
+function formatDate(date: Date): string {
+  return new Date(date).toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export default async function CabinetDetailPage({
   params,
 }: {
@@ -55,17 +49,13 @@ export default async function CabinetDetailPage({
 
   const authorId = await getCurrentAuthorId();
   if (!authorId) {
-    redirect(
-      `/login?redirect=${encodeURIComponent(`/me/invitations/${id}`)}`,
-    );
+    redirect(`/login?redirect=${encodeURIComponent(`/me/invitations/${id}`)}`);
   }
 
   let detail: CabinetDetail;
   try {
     detail = await invitationService.getDetailForAuthor(id, authorId);
   } catch (error) {
-    // Collapse "not found" (404) and "forbidden" (403) to the same screen so we
-    // don't reveal that another author's invitation exists (Requirement 10.4).
     if (
       error instanceof AuthError ||
       (error instanceof InvitationServiceError && error.status === 404)
@@ -83,49 +73,59 @@ export default async function CabinetDetailPage({
 
       <header className={styles.header}>
         <h1 className={styles.title}>{detail.templateName}</h1>
-        <span
-          className={`${styles.badge} ${styles[`badge--${detail.cabinetStatus}`]}`}
-        >
+        <span className={`${styles.badge} ${styles[`badge--${detail.cabinetStatus}`]}`}>
           {STATUS_LABEL[detail.cabinetStatus]}
         </span>
       </header>
 
-      {/* Link + open stats (Requirement 10.2) */}
+      {/* Ссылка с кнопкой копирования */}
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Ссылка</h2>
+        <h2 className={styles.sectionTitle}>Ссылка приглашения</h2>
         {detail.url ? (
-          <div className={styles.linkRow}>
-            <a
-              href={detail.url}
-              className={styles.itemLink}
-              target="_blank"
-              rel="noreferrer"
-            >
+          <div className={styles.linkBlock}>
+            <a href={detail.url} className={styles.linkUrl} target="_blank" rel="noreferrer">
               {detail.url}
             </a>
+            <CopyLinkButton url={detail.url} />
           </div>
         ) : (
-          <p className={styles.muted}>
-            Ссылка появится после оплаты и активации приглашения.
-          </p>
+          <p className={styles.muted}>Ссылка появится после создания приглашения.</p>
         )}
 
-        <div className={styles.stats}>
-          <div className={styles.stat}>
+        <div className={styles.statsRow}>
+          <div className={styles.statBox}>
             <span className={styles.statNum}>{detail.openCount}</span>
             <span className={styles.statLabel}>Открытий</span>
           </div>
-          <div className={styles.stat}>
+          <div className={styles.statBox}>
             <span className={styles.statNum}>{detail.responses.length}</span>
             <span className={styles.statLabel}>Ответов</span>
           </div>
         </div>
       </section>
 
-      {/* RSVP dashboard for the event template (Requirements 8.6, 10.3) */}
+      {/* Открытия */}
+      {detail.opens.length > 0 && (
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Кто открыл ссылку</h2>
+          <div className={styles.eventList}>
+            {detail.opens.map((open, i) => (
+              <div key={i} className={styles.eventCard}>
+                <span className={styles.eventEmoji}>👁</span>
+                <div>
+                  <p className={styles.eventMain}>Ссылку открыли</p>
+                  <p className={styles.eventMeta}>{formatDate(open.openedAt)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* RSVP-дашборд */}
       {detail.rsvp ? (
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>RSVP-дашборд</h2>
+          <h2 className={styles.sectionTitle}>Ответы гостей</h2>
           <div className={styles.totals}>
             <div className={styles.totalCard}>
               <div className={styles.totalNum}>{detail.rsvp.coming}</div>
@@ -140,57 +140,43 @@ export default async function CabinetDetailPage({
               <div className={styles.totalLabel}>Всего человек</div>
             </div>
           </div>
-
           {detail.rsvp.guests.length === 0 ? (
             <p className={styles.muted}>Пока никто не ответил.</p>
           ) : (
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Гость</th>
-                  <th>Статус</th>
-                  <th>Человек</th>
-                </tr>
-              </thead>
-              <tbody>
-                {detail.rsvp.guests.map((guest, index) => (
-                  <tr key={index}>
-                    <td>{guest.guestName ?? <span className={styles.muted}>Без имени</span>}</td>
-                    <td>{RSVP_LABEL[guest.decision]}</td>
-                    <td>{guest.decision === 'yes' ? guest.people : '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className={styles.eventList}>
+              {detail.rsvp.guests.map((guest, i) => (
+                <div key={i} className={styles.eventCard}>
+                  <span className={styles.eventEmoji}>{guest.decision === 'yes' ? '✅' : '❌'}</span>
+                  <div>
+                    <p className={styles.eventMain}>
+                      <strong>{guest.guestName ?? 'Без имени'}</strong> — {RSVP_LABEL[guest.decision]}
+                      {guest.decision === 'yes' && guest.people > 1 ? ` (${guest.people} чел.)` : ''}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </section>
       ) : (
-        /* Generic response list for the date templates (Requirement 10.2) */
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Ответы</h2>
           {detail.responses.length === 0 ? (
-            <p className={styles.muted}>Пока нет ответов.</p>
+            <p className={styles.muted}>Пока никто не ответил. Отправь ссылку адресату!</p>
           ) : (
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Гость</th>
-                  <th>Ответ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {detail.responses.map((response) => (
-                  <tr key={response.id}>
-                    <td>
-                      {response.guestName ?? (
-                        <span className={styles.muted}>Без имени</span>
-                      )}
-                    </td>
-                    <td>{describeOutcome(response.outcome)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className={styles.eventList}>
+              {detail.responses.map((response) => (
+                <div key={response.id} className={styles.eventCard}>
+                  <span className={styles.eventEmoji}>{outcomeEmoji(response.outcome)}</span>
+                  <div>
+                    <p className={styles.eventMain}>
+                      {describeOutcome(response.outcome)}
+                    </p>
+                    <p className={styles.eventMeta}>{formatDate(response.createdAt)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </section>
       )}
@@ -198,29 +184,29 @@ export default async function CabinetDetailPage({
   );
 }
 
-/**
- * Render a short, human-readable summary of a stored response outcome for the
- * non-RSVP templates (согласие/отказ + выбранное место/время). Tolerant of an
- * arbitrary JSON shape.
- */
+function outcomeEmoji(outcome: unknown): string {
+  if (!outcome || typeof outcome !== 'object') return '💬';
+  const r = outcome as Record<string, unknown>;
+  if (r['type'] === 'accepted') return '💚';
+  if (r['type'] === 'declined') return '💔';
+  return '💬';
+}
+
 function describeOutcome(outcome: unknown): string {
-  if (!outcome || typeof outcome !== 'object') return '—';
-  const record = outcome as Record<string, unknown>;
+  if (!outcome || typeof outcome !== 'object') return 'Ответ получен';
+  const r = outcome as Record<string, unknown>;
   const parts: string[] = [];
 
-  const type = record['type'];
-  if (type === 'accepted') parts.push('Согласие');
-  else if (type === 'declined') parts.push('Отказ');
-  else if (type === 'rsvp') {
-    parts.push(record['rsvp'] === 'yes' ? 'Приду' : 'Не смогу');
+  if (r['type'] === 'accepted') parts.push('Согласился(ась)!');
+  else if (r['type'] === 'declined') parts.push('Отказался(ась)');
+  else parts.push('Ответ получен');
+
+  if (typeof r['place'] === 'string' && r['place'].trim()) {
+    parts.push(`Место: ${r['place']}`);
+  }
+  if (typeof r['time'] === 'string' && r['time'].trim()) {
+    parts.push(`Время: ${r['time']}`);
   }
 
-  if (typeof record['place'] === 'string' && record['place'].trim() !== '') {
-    parts.push(`место: ${record['place']}`);
-  }
-  if (typeof record['time'] === 'string' && record['time'].trim() !== '') {
-    parts.push(`время: ${record['time']}`);
-  }
-
-  return parts.length > 0 ? parts.join(', ') : '—';
+  return parts.join(' · ');
 }

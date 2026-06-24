@@ -1,13 +1,3 @@
-/**
- * Author cabinet — invitation list (`/me/invitations`, task 10.3,
- * Requirements 10.1, 10.4).
- *
- * Server component: it gates on an author session (Requirement 10.4 — only the
- * author sees their cabinet) and renders the author's invitations with a status
- * badge ("черновик / активно / отвечено"), the public link once active and the
- * open/response counts (Requirement 10.1). An unauthenticated visitor is
- * redirected to `/login` with a `redirect` back here.
- */
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -15,18 +5,27 @@ import { getCurrentAuthorId } from '@/lib/auth/nextCookies';
 import { invitationService } from '@/lib/services/invitation';
 import type { CabinetStatus } from '@/lib/services/invitation';
 
-import { DeleteInvitationButton, DeleteAccountButton } from './DeleteActions';
+import { CopyLinkButton, DeleteInvitationButton, DeleteAccountButton } from './CabinetActions';
 import styles from './cabinet.module.css';
 
 export const dynamic = 'force-dynamic';
 
-/** Russian label for each derived cabinet status (Requirement 10.1). */
 const STATUS_LABEL: Record<CabinetStatus, string> = {
   draft: 'Черновик',
   active: 'Активно',
   responded: 'Отвечено',
   expired: 'Недоступно',
 };
+
+function formatDate(date: Date): string {
+  return new Date(date).toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
 export default async function CabinetListPage() {
   const authorId = await getCurrentAuthorId();
@@ -47,45 +46,68 @@ export default async function CabinetListPage() {
 
       {invitations.length === 0 ? (
         <section className={styles.empty} role="status">
-          <span aria-hidden="true" style={{ fontSize: 40 }}>
-            💌
-          </span>
+          <span aria-hidden="true" style={{ fontSize: 40 }}>💌</span>
           <h2 className={styles.emptyTitle}>Пока нет приглашений</h2>
-          <p className={styles.emptyText}>
-            Создай первое приглашение — выбери шаблон в галерее.
-          </p>
-          <Link href="/" className={styles.cta}>
-            К галерее шаблонов
-          </Link>
+          <p className={styles.emptyText}>Создай первое приглашение — выбери шаблон в галерее.</p>
+          <Link href="/" className={styles.cta}>К галерее шаблонов</Link>
         </section>
       ) : (
-        <ul className={styles.list}>
+        <div className={styles.cardList}>
           {invitations.map((item) => (
-            <li key={item.id} className={styles.item}>
-              <div className={styles.itemMain}>
-                <Link
-                  href={`/me/invitations/${encodeURIComponent(item.id)}`}
-                  className={styles.itemName}
-                >
-                  {item.templateName}
-                </Link>
-                <span className={styles.itemMeta}>
-                  Открытий: {item.opens} · Ответов: {item.responses}
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span
-                  className={`${styles.badge} ${styles[`badge--${item.cabinetStatus}`]}`}
-                >
+            <div key={item.id} className={styles.card}>
+              {/* Заголовок карточки */}
+              <div className={styles.cardHeader}>
+                <div>
+                  <h2 className={styles.cardTitle}>{item.templateName}</h2>
+                  <span className={styles.cardDate}>
+                    Создано: {formatDate(item.createdAt)}
+                    {item.activatedAt && ` · Активировано: ${formatDate(item.activatedAt)}`}
+                  </span>
+                </div>
+                <span className={`${styles.badge} ${styles[`badge--${item.cabinetStatus}`]}`}>
                   {STATUS_LABEL[item.cabinetStatus]}
                 </span>
+              </div>
+
+              {/* Ссылка с кнопкой копирования */}
+              {item.url ? (
+                <div className={styles.linkBlock}>
+                  <a href={item.url} className={styles.linkUrl} target="_blank" rel="noreferrer">
+                    {item.url}
+                  </a>
+                  <CopyLinkButton url={item.url} />
+                </div>
+              ) : (
+                <p className={styles.linkDraft}>Ссылка появится после создания приглашения.</p>
+              )}
+
+              {/* Статистика */}
+              <div className={styles.statsRow}>
+                <div className={styles.statBox}>
+                  <span className={styles.statNum}>{item.opens}</span>
+                  <span className={styles.statLabel}>Открытий</span>
+                </div>
+                <div className={styles.statBox}>
+                  <span className={styles.statNum}>{item.responses}</span>
+                  <span className={styles.statLabel}>Ответов</span>
+                </div>
+              </div>
+
+              {/* Действия */}
+              <div className={styles.cardActions}>
+                <Link
+                  href={`/me/invitations/${encodeURIComponent(item.id)}`}
+                  className={styles.detailLink}
+                >
+                  Подробнее →
+                </Link>
                 <DeleteInvitationButton invitationId={item.id} />
               </div>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
-      {/* Danger zone */}
+
       <div className={styles.dangerZone}>
         <h2 className={styles.dangerTitle}>Удаление аккаунта</h2>
         <p className={styles.dangerDesc}>
