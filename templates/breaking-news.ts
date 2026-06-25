@@ -2,7 +2,7 @@
  * «Новость дня» (breaking-news) — 5 экранов. Экстренный выпуск новостей.
  */
 import type { TemplateSchema } from './types';
-import { sharedDateFields } from './_dateFields';
+import { composeFields } from './_dateFields';
 import { tailScreens, PREMIUM } from './_multiScreen';
 
 export const breakingNews: TemplateSchema = {
@@ -10,7 +10,13 @@ export const breakingNews: TemplateSchema = {
   name: 'Новость дня',
   description: 'Экстренный выпуск: главная новость — приглашение на свидание.',
   themes: ['neutral', 'playful', 'romantic'],
-  fields: sharedDateFields,
+  fields: composeFields({
+    photoLabel: 'Фото «с места событий»',
+    inviteLabel: 'Текст приглашения',
+    content: [
+      { key: 'заголовок_новости', label: 'Заголовок новости', type: 'text', required: true, maxLength: 140 },
+    ],
+  }),
   startScreen: 'breaking',
   screens: [
     {
@@ -29,7 +35,7 @@ export const breakingNews: TemplateSchema = {
       kind: 'fork',
       elements: [
         { kind: 'heading', id: 'h', text: 'Главная новость' },
-        { kind: 'text', id: 't', text: '{{подпись}} приглашает {{имя_адресата}} на свидание! Подробности — далее.' },
+        { kind: 'text', id: 't', text: '{{заголовок_новости}}' },
         { kind: 'button', id: 'b', text: 'Подробности →', action: 'click:next' },
       ],
       transitions: [{ on: 'click:next', to: 'invite' }],

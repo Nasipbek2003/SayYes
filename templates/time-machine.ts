@@ -4,7 +4,7 @@
  * Использует две картинки автора (фото + screen2_image) как «эпохи».
  */
 import type { TemplateSchema } from './types';
-import { sharedDateFields } from './_dateFields';
+import { composeFields } from './_dateFields';
 import { tailScreens, PREMIUM } from './_multiScreen';
 
 export const timeMachine: TemplateSchema = {
@@ -12,7 +12,14 @@ export const timeMachine: TemplateSchema = {
   name: 'Машина времени',
   description: 'Путешествие через ваши воспоминания к главному вопросу.',
   themes: ['romantic', 'neutral', 'playful'],
-  fields: sharedDateFields,
+  fields: composeFields({
+    photoLabel: 'Фото воспоминания 1',
+    inviteLabel: 'Текст приглашения',
+    content: [
+      { key: 'воспоминание_1', label: 'Подпись к воспоминанию 1', type: 'text', required: true, maxLength: 120 },
+      { key: 'воспоминание_2', label: 'Подпись к воспоминанию 2', type: 'text', required: true, maxLength: 120 },
+    ],
+  }),
   startScreen: 'start',
   screens: [
     {
@@ -32,7 +39,7 @@ export const timeMachine: TemplateSchema = {
       elements: [
         { kind: 'image', id: 'img', src: '{{фото}}' },
         { kind: 'heading', id: 'h', text: 'Помнишь этот момент?' },
-        { kind: 'text', id: 't', text: 'Кажется, это было только вчера...' },
+        { kind: 'text', id: 't', text: '{{воспоминание_1}}' },
         { kind: 'button', id: 'b', text: 'Дальше →', action: 'click:next' },
       ],
       transitions: [{ on: 'click:next', to: 'era2' }],
@@ -43,7 +50,7 @@ export const timeMachine: TemplateSchema = {
       elements: [
         { kind: 'image', id: 'img', src: '{{screen2_image}}' },
         { kind: 'heading', id: 'h', text: 'А этот?' },
-        { kind: 'text', id: 't', text: 'Сколько всего у нас уже было ✨' },
+        { kind: 'text', id: 't', text: '{{воспоминание_2}}' },
         { kind: 'button', id: 'b', text: 'Дальше →', action: 'click:next' },
       ],
       transitions: [{ on: 'click:next', to: 'now' }],

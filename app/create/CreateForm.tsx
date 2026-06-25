@@ -1,16 +1,21 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart } from 'lucide-react';
 
 import type { PreviewPayload } from '@/lib/services/invitation';
 import type { TemplateField } from '@/templates/types';
 import {
   type FormData,
+  type PlaceDraft,
+  addPlace,
   buildInitialData,
+  fieldInputKind,
+  readPlaces,
+  removePlace,
   setFieldValue,
   toPersistedData,
+  updatePlace,
   validateAuthorForm,
 } from '@/lib/create/form';
 import { AUTOSAVE_DEBOUNCE_MS, Debouncer } from '@/lib/create/autosave';
@@ -41,45 +46,18 @@ export interface CreateFormProps {
   isAuthed?: boolean;
 }
 
-/** Готовые картинки: 1-4 для первого экрана, 5-8 для второго (лежат в /public). */
-const SCREEN1_IMAGES = ['/1.webp', '/2.webp', '/3.webp', '/4.webp'];
-const SCREEN2_IMAGES = ['/5.webp', '/6.webp', '/7.webp', '/8.webp'];
+/** Готовые стикеры-картинки (лежат в /public) — для любого image-поля. */
+const STICKERS = ['/1.webp', '/2.webp', '/3.webp', '/4.webp', '/5.webp', '/6.webp', '/7.webp', '/8.webp'];
 
 const TOTAL_STEPS = 3;
-const STEP_LABELS = ['Начало', 'Редактор', 'Готово'];
+const STEP_LABELS = ['Начало', 'Заполни поля', 'Готово'];
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
 export function CreateForm({ template, themeId }: CreateFormProps) {
   const router = useRouter();
 
-  // Ключи реальных полей шаблона (для валидации и рендера).
-  const imageKey = useMemo(
-    () => template.fields.find((f) => f.type === 'image')?.key ?? 'фото',
-    [template.fields],
-  );
-  const titleKey = useMemo(
-    () => template.fields.find((f) => f.type === 'longtext')?.key ?? 'текст_приглашения',
-    [template.fields],
-  );
-  const hasName = template.fields.some((f) => f.key === 'имя_адресата');
-  const hasSignature = template.fields.some((f) => f.key === 'подпись');
-
   const [step, setStep] = useState(1);
-  const [editScreen, setEditScreen] = useState<1 | 2>(1);
-  const [data, setData] = useState<FormData>(() => {
-    const base = buildInitialData({ fields: template.fields });
-    return {
-      ...base,
-      [imageKey]: base[imageKey] || SCREEN1_IMAGES[0],
-      screen2_image: base['screen2_image'] || SCREEN2_IMAGES[0],
-      btn_yes: base['btn_yes'] || 'Да',
-      btn_no: base['btn_no'] || 'Нет',
-      screen2_title: base['screen2_title'] || 'Подожди, ты действительно сказала да?',
-      screen2_subtitle: base['screen2_subtitle'] || '',
-      btn_confirm: base['btn_confirm'] || 'Да, конечно!',
-    };
-  });
-
+  const [data, setData] = useState<FormData>(() => buildInitialData({ fields: template.fields }));
   const [invitationId, setInvitationId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [preview, setPreview] = useState<PreviewPayload | null>(null);
@@ -89,7 +67,7 @@ export function CreateForm({ template, themeId }: CreateFormProps) {
   const invitationIdRef = useRef<string | null>(null);
   invitationIdRef.current = invitationId;
 
-  const validation = useMemo(() => validateAuthorForm(template.id, data), [template.id, data]);
+  const validation = validateAuthorForm(template.id, data);
 
   const handleAuthError = useCallback(() => { router.push('/login'); }, [router]);
 
@@ -185,14 +163,7 @@ export function CreateForm({ template, themeId }: CreateFormProps) {
     }
   };
 
-  const str = (key: string) => (typeof data[key] === 'string' ? (data[key] as string) : '');
   const saveLabel: Record<SaveState, string> = { idle: '', saving: 'Сохранение…', saved: 'Сохранено ✓', error: 'Ошибка сохранения' };
-
-  // Данные для живого превью текущего редактируемого экрана.
-  const previewImage = editScreen === 1 ? str(imageKey) : str('screen2_image');
-  const previewTitle = editScreen === 1
-    ? (str(titleKey) || 'Ты пойдёшь со мной на свидание?')
-    : (str('screen2_title') || 'Подожди, ты действительно сказала да?');
 
   return (
     <div className={styles.wizard}>
@@ -223,219 +194,44 @@ export function CreateForm({ template, themeId }: CreateFormProps) {
       </div>
 
       <div className={styles.stepContent}>
-        {/* ═══ Шаг 1: Приветствие ═══ */}
+        {/* ═══ Шаг 1: Приветствие (зависит от шаблона) ═══ */}
         {step === 1 && (
-          <div className={styles.welcomeLayout}>
-            <div className={styles.welcomeImage}>
-              <div className={styles.welcomePhone}>
-                <div className={styles.welcomeScreen}>
-                  <div className={styles.welcomeScreenHeart}>
-                    <Heart fill="#E8367A" color="#E8367A" size={92} strokeWidth={0} />
-                  </div>
-                  <div className={styles.welcomeCard}>
-                    <p className={styles.welcomeCardLabel}>Приглашение на свидание</p>
-                    <p className={styles.welcomeCardTitle}>Тебе приглашают<br />на свидание!</p>
-                    <p className={styles.welcomeCardSub}>Для тебя приготовили кое-что особенное</p>
-                    <span className={styles.welcomeCardBtn}>Открыть →</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className={styles.welcomeRight}>
-              <h1 className={styles.welcomeTitle}>
-                Создай приглашение на свидание
-                <span className={styles.welcomeAccent}>ЗА 2 МИНУТЫ</span>
-              </h1>
-              <p className={styles.welcomeSubtitle}>и отправь ссылку тому, кого хочешь пригласить</p>
-              <p className={styles.welcomeQuestion}>Готовы сделать романтичный сюрприз? 💝</p>
+          <div className={styles.startScreen}>
+            <div className={styles.startCard}>
+              <span className={styles.startEmoji}>💌</span>
+              <h1 className={styles.startTitle}>{template.name}</h1>
+              <p className={styles.startDesc}>{template.description}</p>
               <div className={styles.welcomeActions}>
-                <button className={styles.btnPrimary} onClick={() => setStep(2)}>Да! 💐</button>
-                <button className={styles.btnSecondary} onClick={() => router.push('/')}>Не сейчас</button>
+                <button className={styles.btnPrimary} onClick={() => setStep(2)}>Создать →</button>
+                <button className={styles.btnSecondary} onClick={() => router.push('/')}>В галерею</button>
               </div>
             </div>
           </div>
         )}
 
-        {/* ═══ Шаг 2: Двухэкранный редактор ═══ */}
+        {/* ═══ Шаг 2: Поля шаблона ═══ */}
         {step === 2 && (
-          <div className={styles.editorLayout}>
-            {/* Левая колонка: вкладки + живое превью */}
-            <div className={styles.editorPreviewCol}>
-              <div className={styles.screenTabs}>
-                <button
-                  className={`${styles.screenTab} ${editScreen === 1 ? styles.screenTabActive : ''}`}
-                  onClick={() => setEditScreen(1)}
-                >
-                  Экран 1
-                </button>
-                <button
-                  className={`${styles.screenTab} ${editScreen === 2 ? styles.screenTabActive : ''}`}
-                  onClick={() => setEditScreen(2)}
-                >
-                  Экран 2
-                </button>
-              </div>
+          <div className={styles.formStep}>
+            <h2 className={styles.stepTitle}>{template.name}</h2>
+            <p className={styles.stepDesc}>Заполни поля — это увидит приглашённый</p>
 
-              <div className={styles.editorPhone}>
-                <div className={styles.editorScreen}>
-                  <div className={styles.previewCard}>
-                    {previewImage ? (
-                      <img className={styles.previewImg} src={previewImage} alt="" />
-                    ) : (
-                      <div className={styles.previewImgPlaceholder}>
-                        <Heart fill="#E8367A" color="#E8367A" size={48} strokeWidth={0} />
-                      </div>
-                    )}
-                    <p className={styles.previewTitle}>{previewTitle}</p>
-                    {editScreen === 2 && str('screen2_subtitle') && (
-                      <p className={styles.previewSubtitle}>{str('screen2_subtitle')}</p>
-                    )}
-                    <div className={styles.previewBtns}>
-                      {editScreen === 1 ? (
-                        <>
-                          <span className={styles.previewBtnYes}>{str('btn_yes') || 'Да'}</span>
-                          <span className={styles.previewBtnNo}>{str('btn_no') || 'Нет'}</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className={styles.previewBtnYes}>{str('btn_confirm') || 'Да, конечно!'}</span>
-                          <span className={styles.previewBtnNo}>{str('btn_no') || 'Нет'}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {template.fields.map((field) => (
+              <FieldControl
+                key={field.key}
+                field={field}
+                value={data[field.key]}
+                error={validation.fieldErrors[field.key]}
+                onChange={(v) => setVal(field.key, v)}
+                onUpload={(file) => onUploadImage(field.key, file)}
+              />
+            ))}
 
-            {/* Правая колонка: форма */}
-            <div className={styles.editorForm}>
-              <div className={styles.editorHeader}>
-                <h2 className={styles.editorHeaderTitle}>Настрой первые экраны приглашения</h2>
-                <p className={styles.editorHeaderDesc}>Тексты и картинки для шагов 1 и 2, которые увидит приглашённый</p>
-              </div>
+            {saveState !== 'idle' && <p className={styles.saveStatus}>{saveLabel[saveState]}</p>}
+            {error && <p className={`${styles.notice} ${styles.noticeError}`}>{error}</p>}
 
-              {editScreen === 1 ? (
-                <div className={styles.editorSection}>
-                  <p className={styles.editorSectionTitle}>Экран 1 — приглашение</p>
-
-                  {hasName && (
-                    <div className={styles.field}>
-                      <label className={styles.label}>Имя адресата</label>
-                      <input
-                        className={validation.fieldErrors['имя_адресата'] ? `${styles.input} ${styles['input--error']}` : styles.input}
-                        value={str('имя_адресата')}
-                        placeholder="Например, Айя"
-                        maxLength={60}
-                        onChange={(e) => setVal('имя_адресата', e.target.value)}
-                      />
-                      {validation.fieldErrors['имя_адресата'] && <span className={styles.error}>{validation.fieldErrors['имя_адресата']}</span>}
-                    </div>
-                  )}
-
-                  <ImagePicker
-                    label="Картинка на экране"
-                    images={SCREEN1_IMAGES}
-                    value={str(imageKey)}
-                    onPick={(url) => setVal(imageKey, url)}
-                    onUpload={(file) => onUploadImage(imageKey, file)}
-                  />
-
-                  <div className={styles.field}>
-                    <label className={styles.label}>Заголовок</label>
-                    <textarea
-                      className={validation.fieldErrors[titleKey] ? `${styles.textarea} ${styles['textarea--error']}` : styles.textarea}
-                      value={str(titleKey)}
-                      placeholder="Ты пойдёшь со мной на свидание?"
-                      maxLength={300}
-                      onChange={(e) => setVal(titleKey, e.target.value)}
-                    />
-                    <span className={styles.charCount}>{str(titleKey).length}/300</span>
-                    {validation.fieldErrors[titleKey] && <span className={styles.error}>{validation.fieldErrors[titleKey]}</span>}
-                  </div>
-
-                  <div className={styles.fieldRow}>
-                    <div className={styles.field}>
-                      <label className={styles.label}>Кнопка «Да»</label>
-                      <input className={styles.input} value={str('btn_yes')} placeholder="Да" maxLength={30} onChange={(e) => setVal('btn_yes', e.target.value)} />
-                    </div>
-                    <div className={styles.field}>
-                      <label className={styles.label}>Кнопка «Нет»</label>
-                      <input className={styles.input} value={str('btn_no')} placeholder="Нет" maxLength={30} onChange={(e) => setVal('btn_no', e.target.value)} />
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className={styles.editorSection}>
-                  <p className={styles.editorSectionTitle}>Экран 2 — подтверждение</p>
-
-                  <ImagePicker
-                    label="Картинка на экране"
-                    images={SCREEN2_IMAGES}
-                    value={str('screen2_image')}
-                    onPick={(url) => setVal('screen2_image', url)}
-                    onUpload={(file) => onUploadImage('screen2_image', file)}
-                  />
-
-                  <div className={styles.field}>
-                    <label className={styles.label}>Заголовок</label>
-                    <textarea
-                      className={styles.textarea}
-                      value={str('screen2_title')}
-                      placeholder="Подожди, ты действительно сказала да?"
-                      maxLength={300}
-                      onChange={(e) => setVal('screen2_title', e.target.value)}
-                    />
-                    <span className={styles.charCount}>{str('screen2_title').length}/300</span>
-                  </div>
-
-                  <div className={styles.field}>
-                    <label className={styles.label}>Подзаголовок</label>
-                    <textarea
-                      className={styles.textarea}
-                      value={str('screen2_subtitle')}
-                      placeholder='Я был готов, что скажешь "нет" ахах'
-                      maxLength={300}
-                      onChange={(e) => setVal('screen2_subtitle', e.target.value)}
-                    />
-                  </div>
-
-                  <div className={styles.field}>
-                    <label className={styles.label}>Кнопка подтверждения</label>
-                    <input className={styles.input} value={str('btn_confirm')} placeholder="Да, конечно!" maxLength={30} onChange={(e) => setVal('btn_confirm', e.target.value)} />
-                  </div>
-
-                  {hasSignature && (
-                    <div className={styles.field}>
-                      <label className={styles.label}>Ваше имя (подпись)</label>
-                      <input
-                        className={validation.fieldErrors['подпись'] ? `${styles.input} ${styles['input--error']}` : styles.input}
-                        value={str('подпись')}
-                        placeholder="От кого приглашение"
-                        maxLength={60}
-                        onChange={(e) => setVal('подпись', e.target.value)}
-                      />
-                      {validation.fieldErrors['подпись'] && <span className={styles.error}>{validation.fieldErrors['подпись']}</span>}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {saveState !== 'idle' && <p className={styles.saveStatus}>{saveLabel[saveState]}</p>}
-              {error && <p className={`${styles.notice} ${styles.noticeError}`}>{error}</p>}
-
-              <div className={styles.stepActions}>
-                {editScreen === 1 ? (
-                  <button className={styles.btnBack} onClick={() => setStep(1)}>← Назад</button>
-                ) : (
-                  <button className={styles.btnBack} onClick={() => setEditScreen(1)}>← Экран 1</button>
-                )}
-                {editScreen === 1 ? (
-                  <button className={styles.btnPrimary} onClick={() => setEditScreen(2)}>Далее →</button>
-                ) : (
-                  <button className={styles.btnPrimary} onClick={onPreview}>Предпросмотр →</button>
-                )}
-              </div>
+            <div className={styles.stepActions}>
+              <button className={styles.btnBack} onClick={() => setStep(1)}>← Назад</button>
+              <button className={styles.btnPrimary} onClick={onPreview}>Предпросмотр →</button>
             </div>
           </div>
         )}
@@ -445,15 +241,11 @@ export function CreateForm({ template, themeId }: CreateFormProps) {
           <div className={styles.previewStep}>
             <h2 className={styles.stepTitle}>Предпросмотр</h2>
             <p className={styles.stepDesc} style={{ marginBottom: 8 }}>Так увидит приглашение адресат</p>
-            {preview ? <PreviewPane preview={preview} /> : <p className={`${styles.notice} ${styles.noticeInfo}`}>Загружаем предпросмотр…</p>}
+            {preview ? <PreviewPane preview={preview} /> : <p className={`${styles.notice} ${styles.noticeInfo}`}>Загружаем…</p>}
             {error && <p className={`${styles.notice} ${styles.noticeError}`}>{error}</p>}
             <div className={styles.stepActions}>
               <button className={styles.btnBack} onClick={() => setStep(2)}>← Назад</button>
-              <button
-                className={styles.btnPrimary}
-                onClick={onActivate}
-                disabled={!validation.ok || activating}
-              >
+              <button className={styles.btnPrimary} onClick={onActivate} disabled={!validation.ok || activating}>
                 {activating ? 'Создаём ссылку…' : 'Получить ссылку'}
               </button>
             </div>
@@ -464,27 +256,98 @@ export function CreateForm({ template, themeId }: CreateFormProps) {
   );
 }
 
-/** Сетка готовых картинок + кнопка «Загрузить свою». */
-function ImagePicker({
-  label, images, value, onPick, onUpload,
+/** Контрол одного поля шаблона — выбирается по типу поля. */
+function FieldControl({
+  field, value, error, onChange, onUpload,
 }: {
-  label: string;
-  images: string[];
-  value: string;
-  onPick: (url: string) => void;
+  field: TemplateField;
+  value: unknown;
+  error?: string;
+  onChange: (value: unknown) => void;
   onUpload: (file: File) => void;
 }) {
+  const kind = fieldInputKind(field.type);
+  const str = typeof value === 'string' ? value : '';
+
+  const label = (
+    <label className={styles.label}>
+      {field.label}
+      {!field.required ? <span className={styles.optional}> (необяз.)</span> : null}
+    </label>
+  );
+
+  if (kind === 'image') {
+    return (
+      <div className={styles.field}>
+        {label}
+        <ImagePicker value={str} onPick={onChange} onUpload={onUpload} />
+        {error ? <span className={styles.error}>{error}</span> : null}
+      </div>
+    );
+  }
+
+  if (kind === 'checkbox') {
+    return (
+      <div className={styles.checkboxRow}>
+        <input type="checkbox" className={styles.checkbox} checked={value === true} onChange={(e) => onChange(e.target.checked)} />
+        <label className={styles.label}>{field.label}</label>
+      </div>
+    );
+  }
+
+  if (kind === 'places') {
+    return (
+      <div className={styles.field}>
+        {label}
+        <PlacesEditor places={readPlaces(value)} onChange={onChange} />
+        {error ? <span className={styles.error}>{error}</span> : null}
+      </div>
+    );
+  }
+
+  if (kind === 'textarea') {
+    return (
+      <div className={styles.field}>
+        {label}
+        <textarea
+          className={error ? `${styles.textarea} ${styles['textarea--error']}` : styles.textarea}
+          value={str}
+          maxLength={field.maxLength}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        {field.maxLength ? <span className={styles.charCount}>{str.length}/{field.maxLength}</span> : null}
+        {error ? <span className={styles.error}>{error}</span> : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.field}>
+      {label}
+      <input
+        type={kind === 'datetime' ? 'datetime-local' : 'text'}
+        className={error ? `${styles.input} ${styles['input--error']}` : styles.input}
+        value={str}
+        maxLength={field.maxLength}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {error ? <span className={styles.error}>{error}</span> : null}
+    </div>
+  );
+}
+
+/** Сетка готовых стикеров + загрузка своей картинки. */
+function ImagePicker({ value, onPick, onUpload }: { value: string; onPick: (url: string) => void; onUpload: (file: File) => void }) {
   return (
     <div className={styles.imageBlock}>
-      <span className={styles.imageBlockLabel}>{label}</span>
       <div className={styles.imageGrid}>
-        {images.map((src) => (
+        {STICKERS.map((src) => (
           <button
             type="button"
             key={src}
             className={`${styles.imageThumb} ${value === src ? styles.imageThumbActive : ''}`}
             onClick={() => onPick(src)}
-            aria-label={`Выбрать картинку ${src}`}
+            aria-label={`Выбрать ${src}`}
           >
             <img className={styles.imageThumbImg} src={src} alt="" />
           </button>
@@ -492,14 +355,31 @@ function ImagePicker({
       </div>
       <label className={styles.uploadOwn}>
         Загрузить свою
-        <input
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
-          style={{ display: 'none' }}
-          onChange={(e) => { const file = e.target.files?.[0]; if (file) onUpload(file); }}
-        />
+        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" style={{ display: 'none' }}
+          onChange={(e) => { const file = e.target.files?.[0]; if (file) onUpload(file); }} />
       </label>
-      <span className={styles.fileHint}>до 7 МБ, JPEG, PNG, GIF, WebP, HEIC</span>
+      <span className={styles.fileHint}>до 7 МБ, JPEG, PNG, GIF, WebP</span>
+    </div>
+  );
+}
+
+/** Редактор списка мест (для шаблонов с placesList). */
+function PlacesEditor({ places, onChange }: { places: PlaceDraft[]; onChange: (places: PlaceDraft[]) => void }) {
+  return (
+    <div className={styles.places}>
+      {places.map((place, index) => (
+        <div className={styles.place} key={index}>
+          <div className={styles.placeHead}>
+            <span className={styles.placeTitle}>Место {index + 1}</span>
+            <button type="button" className={styles.removeBtn} onClick={() => onChange(removePlace(places, index))}>Удалить</button>
+          </div>
+          <input className={styles.input} placeholder="Название" value={place.название}
+            onChange={(e) => onChange(updatePlace(places, index, { название: e.target.value }))} />
+          <input className={styles.input} placeholder="Описание (необяз.)" value={place.описание ?? ''}
+            onChange={(e) => onChange(updatePlace(places, index, { описание: e.target.value }))} />
+        </div>
+      ))}
+      <button type="button" className={styles.addBtn} onClick={() => onChange(addPlace(places))}>+ Добавить место</button>
     </div>
   );
 }

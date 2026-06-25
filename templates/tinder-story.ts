@@ -2,7 +2,7 @@
  * «Тиндер-стори» (tinder-story) — 7 экранов. Фейковый дейтинг с «IT'S A MATCH!».
  */
 import type { TemplateSchema } from './types';
-import { sharedDateFields } from './_dateFields';
+import { composeFields } from './_dateFields';
 import { tailScreens, PREMIUM } from './_multiScreen';
 
 export const tinderStory: TemplateSchema = {
@@ -10,7 +10,13 @@ export const tinderStory: TemplateSchema = {
   name: 'Тиндер-стори',
   description: 'Фейковое дейтинг-приложение с моментом «IT’S A MATCH!» и чатом.',
   themes: ['romantic', 'playful', 'neutral'],
-  fields: sharedDateFields,
+  fields: composeFields({
+    photoLabel: 'Аватар профиля',
+    inviteLabel: 'Первое сообщение (приглашение)',
+    content: [
+      { key: 'био', label: 'Био профиля (пару слов о себе)', type: 'longtext', required: true, maxLength: 160 },
+    ],
+  }),
   startScreen: 'loading',
   screens: [
     {
@@ -30,7 +36,7 @@ export const tinderStory: TemplateSchema = {
       elements: [
         { kind: 'image', id: 'img', src: '{{фото}}' },
         { kind: 'heading', id: 'h', text: '{{подпись}}, рядом' },
-        { kind: 'text', id: 't', text: 'Хочет познакомиться с тобой поближе ✨' },
+        { kind: 'text', id: 't', text: '{{био}}' },
         { kind: 'button', id: 'like', text: '♥ Нравится', action: 'click:next' },
       ],
       transitions: [{ on: 'click:next', to: 'match' }],

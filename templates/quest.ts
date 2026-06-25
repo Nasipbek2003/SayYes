@@ -2,7 +2,7 @@
  * «Квест: Найди приглашение» (quest) — 7 экранов. Загадки → тайник → приглашение.
  */
 import type { TemplateSchema } from './types';
-import { sharedDateFields } from './_dateFields';
+import { composeFields } from './_dateFields';
 import { tailScreens, PREMIUM } from './_multiScreen';
 
 export const quest: TemplateSchema = {
@@ -10,7 +10,14 @@ export const quest: TemplateSchema = {
   name: 'Квест: найди приглашение',
   description: 'Мини-квест с загадками и тайником, где спрятано приглашение.',
   themes: ['neutral', 'playful', 'romantic'],
-  fields: sharedDateFields,
+  fields: composeFields({
+    photoLabel: 'Картинка приглашения',
+    inviteLabel: 'Текст приглашения (в тайнике)',
+    content: [
+      { key: 'загадка_1', label: 'Загадка 1', type: 'longtext', required: true, maxLength: 200 },
+      { key: 'загадка_2', label: 'Загадка 2', type: 'longtext', required: true, maxLength: 200 },
+    ],
+  }),
   startScreen: 'intro',
   screens: [
     {
@@ -29,7 +36,7 @@ export const quest: TemplateSchema = {
       kind: 'fork',
       elements: [
         { kind: 'heading', id: 'h', text: 'Загадка №1' },
-        { kind: 'text', id: 't', text: 'Что нельзя удержать, но можно подарить?' },
+        { kind: 'text', id: 't', text: '{{загадка_1}}' },
         { kind: 'button', id: 'a1', text: 'Время ⏳', action: 'click:next' },
         { kind: 'button', id: 'a2', text: 'Улыбку 😊', action: 'click:next' },
         { kind: 'button', id: 'a3', text: 'Сердце ❤️', action: 'click:next' },
@@ -41,7 +48,7 @@ export const quest: TemplateSchema = {
       kind: 'fork',
       elements: [
         { kind: 'heading', id: 'h', text: 'Загадка №2' },
-        { kind: 'text', id: 't', text: 'Чем больше делишься, тем больше становится. Что это?' },
+        { kind: 'text', id: 't', text: '{{загадка_2}}' },
         { kind: 'button', id: 'a1', text: 'Радость ✨', action: 'click:next' },
         { kind: 'button', id: 'a2', text: 'Любовь 💛', action: 'click:next' },
       ],

@@ -2,7 +2,7 @@
  * «Допрос с пристрастием» (interrogation) — 6 экранов. Шуточный допрос-викторина.
  */
 import type { TemplateSchema } from './types';
-import { sharedDateFields } from './_dateFields';
+import { composeFields } from './_dateFields';
 import { tailScreens, PREMIUM } from './_multiScreen';
 
 export const interrogation: TemplateSchema = {
@@ -10,7 +10,14 @@ export const interrogation: TemplateSchema = {
   name: 'Допрос с пристрастием',
   description: 'Шуточный детектор лжи: тебя «допрашивают», готов(а) ли ты на свидание.',
   themes: ['neutral', 'playful', 'romantic'],
-  fields: sharedDateFields,
+  fields: composeFields({
+    photoLabel: 'Фото в досье',
+    inviteLabel: 'Текст «приговора» (приглашение)',
+    content: [
+      { key: 'вопрос_1', label: 'Вопрос допроса 1', type: 'text', required: true, maxLength: 120 },
+      { key: 'вопрос_2', label: 'Вопрос допроса 2', type: 'text', required: true, maxLength: 120 },
+    ],
+  }),
   startScreen: 'start',
   screens: [
     {
@@ -29,7 +36,7 @@ export const interrogation: TemplateSchema = {
       kind: 'fork',
       elements: [
         { kind: 'heading', id: 'h', text: 'Вопрос 1' },
-        { kind: 'text', id: 't', text: 'Как вы относитесь к {{подпись}}?' },
+        { kind: 'text', id: 't', text: '{{вопрос_1}}' },
         { kind: 'button', id: 'a1', text: 'Обожаю 😍', action: 'click:next' },
         { kind: 'button', id: 'a2', text: 'Терплю 😏', action: 'click:next' },
         { kind: 'button', id: 'a3', text: 'Без комментариев 🤐', action: 'click:next' },
@@ -41,7 +48,7 @@ export const interrogation: TemplateSchema = {
       kind: 'fork',
       elements: [
         { kind: 'heading', id: 'h', text: 'Вопрос 2' },
-        { kind: 'text', id: 't', text: 'Готовы провести вечер в компании {{подпись}}?' },
+        { kind: 'text', id: 't', text: '{{вопрос_2}}' },
         { kind: 'button', id: 'a1', text: 'Конечно!', action: 'click:next' },
         { kind: 'button', id: 'a2', text: 'Надо подумать...', action: 'click:next' },
       ],

@@ -2,7 +2,7 @@
  * «Гороскоп совместимости» (horoscope) — 6 экранов. Совместимость всегда 100%.
  */
 import type { TemplateSchema } from './types';
-import { sharedDateFields } from './_dateFields';
+import { composeFields } from './_dateFields';
 import { tailScreens, PREMIUM } from './_multiScreen';
 
 export const horoscope: TemplateSchema = {
@@ -10,7 +10,13 @@ export const horoscope: TemplateSchema = {
   name: 'Гороскоп совместимости',
   description: 'Звёзды рассчитывают вашу совместимость. Спойлер: 100%.',
   themes: ['neutral', 'romantic', 'playful'],
-  fields: sharedDateFields,
+  fields: composeFields({
+    photoLabel: 'Картинка приглашения',
+    inviteLabel: 'Текст приглашения',
+    content: [
+      { key: 'предсказание', label: 'Предсказание звёзд', type: 'longtext', required: true, maxLength: 200 },
+    ],
+  }),
   startScreen: 'sky',
   screens: [
     {
@@ -39,7 +45,7 @@ export const horoscope: TemplateSchema = {
       kind: 'fork',
       elements: [
         { kind: 'heading', id: 'h', text: 'Совместимость: 100%! 💫' },
-        { kind: 'text', id: 't', text: 'Звёзды предсказывают вам незабываемый вечер.' },
+        { kind: 'text', id: 't', text: '{{предсказание}}' },
         { kind: 'button', id: 'b', text: 'Что дальше?', action: 'click:next' },
       ],
       transitions: [{ on: 'click:next', to: 'invite' }],
