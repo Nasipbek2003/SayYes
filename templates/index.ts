@@ -20,7 +20,10 @@
  */
 import { dateAsk } from './date-ask';
 import { missionDate } from './mission-date';
+import { moviePoster } from './movie-poster';
+import { recipeDate } from './recipe-date';
 import { secretLetter } from './secret-letter';
+import { wishStar } from './wish-star';
 import { eventRsvp } from './event-rsvp';
 import { simpleDate } from './simple-date';
 import { storyFork } from './story-fork';
@@ -31,10 +34,20 @@ export const templateSchemas: TemplateSchema[] = [
   dateAsk,
   secretLetter,
   missionDate,
+  moviePoster,
+  wishStar,
+  recipeDate,
   simpleDate,
   storyFork,
   eventRsvp,
 ];
 
 /** Only templates shown in the gallery for new invitations. */
-export const gallerySchemas: TemplateSchema[] = [dateAsk, secretLetter, missionDate];
+export const gallerySchemas: TemplateSchema[] = [
+  dateAsk,
+  secretLetter,
+  missionDate,
+  moviePoster,
+  wishStar,
+  recipeDate,
+];

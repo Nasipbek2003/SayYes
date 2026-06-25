@@ -375,6 +375,206 @@ a {
 }
 
 /* ============================================================
+   Шаблон «movie-poster» — кинопостер
+   ============================================================ */
+.mv-intro {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.75rem;
+}
+
+.mv-poster {
+  width: 16rem;
+  padding: 2.5rem 1.5rem;
+  border-radius: 12px;
+  background: linear-gradient(165deg, #2B2118 0%, #1A1410 100%);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+.mv-poster__genre {
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #D4AF37;
+}
+
+.mv-poster__title {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #F5E6C8;
+}
+
+.mv-poster__stars {
+  font-size: 1.1rem;
+  color: #D4AF37;
+  letter-spacing: 0.1em;
+}
+
+.mv-poster__premiere {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: #B0A080;
+}
+
+.mv-intro__btn {
+  background: #D4AF37;
+  color: #2B2118;
+  font-weight: 600;
+  border: none;
+}
+
+.mv-intro__btn:hover { background: #E5C04A; }
+
+[data-template="movie-poster"] .screen {
+  background: linear-gradient(180deg, #2B2118 0%, #1A1410 100%);
+}
+[data-template="movie-poster"] .screen__heading { color: #F5E6C8; }
+[data-template="movie-poster"] .screen__text { color: #B0A080; }
+[data-template="movie-poster"] .screen__button { background: #D4AF37; color: #2B2118; font-weight: 600; }
+[data-template="movie-poster"] .screen__button:hover { background: #E5C04A; }
+[data-template="movie-poster"] .runaway__no { border-color: #4A3B28; color: #8A7355; }
+[data-template="movie-poster"] .t1-final__text { color: #F5E6C8; }
+[data-template="movie-poster"] .da-image { border-radius: 6px; border: 1px solid rgba(212,175,55,0.4); }
+
+/* ============================================================
+   Шаблон «wish-star» — звёздное небо
+   ============================================================ */
+.ws-intro {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  min-height: 60dvh;
+  justify-content: center;
+  width: 100%;
+}
+
+.ws-shooting {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.8), -30px 0 20px 1px rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+}
+
+.ws-bigstar {
+  font-size: 4.5rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 20px rgba(255, 220, 120, 0.6));
+}
+
+.ws-intro__title {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: #EDE6FF;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.ws-intro__btn {
+  background: #6C5CE7;
+  color: #fff;
+  border: none;
+}
+.ws-intro__btn:hover { background: #5B4BD6; }
+
+[data-template="wish-star"] .screen {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 30%, rgba(108, 92, 231, 0.18) 0%, transparent 70%),
+    linear-gradient(180deg, #1A1A40 0%, #0D0D26 100%);
+}
+[data-template="wish-star"] .screen__heading { color: #EDE6FF; }
+[data-template="wish-star"] .screen__text { color: #A99FD9; }
+[data-template="wish-star"] .screen__button { background: #6C5CE7; color: #fff; }
+[data-template="wish-star"] .screen__button:hover { background: #5B4BD6; }
+[data-template="wish-star"] .runaway__no { border-color: #3A3A66; color: #8079B3; }
+[data-template="wish-star"] .t1-final__text { color: #EDE6FF; }
+
+/* ============================================================
+   Шаблон «recipe-date» — кулинарная книга
+   ============================================================ */
+.rc-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 22rem;
+  padding: 2.5rem 2rem;
+  border-radius: 8px;
+  background: #FBF6EC;
+  border: 1px solid #E3D5BC;
+  box-shadow: 0 14px 40px rgba(120, 90, 50, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
+  text-align: center;
+}
+
+.rc-card__badge {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #B07D3C;
+  font-weight: 600;
+}
+
+.rc-card__title {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: 400;
+  color: #5C4326;
+  line-height: 1.25;
+}
+
+.rc-card__divider {
+  width: 3rem;
+  height: 2px;
+  background: #D4B483;
+}
+
+.rc-card__ingredients {
+  font-size: 0.9rem;
+  color: #8A6D45;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.rc-card__btn {
+  background: #B07D3C;
+  color: #FBF6EC;
+  border: none;
+  margin-top: 0.5rem;
+}
+.rc-card__btn:hover { background: #9A6B30; }
+
+[data-template="recipe-date"] .screen {
+  background: linear-gradient(180deg, #FBF6EC 0%, #F3E8D4 100%);
+}
+[data-template="recipe-date"] .screen__heading { color: #5C4326; }
+[data-template="recipe-date"] .screen__text { color: #8A6D45; }
+[data-template="recipe-date"] .screen__button { background: #B07D3C; color: #FBF6EC; }
+[data-template="recipe-date"] .screen__button:hover { background: #9A6B30; }
+[data-template="recipe-date"] .runaway__no { border-color: #D4B483; color: #A88A5C; }
+[data-template="recipe-date"] .t1-final__text { color: #5C4326; }
+[data-template="recipe-date"] .da-image { border-radius: 6px; }
+
+/* ============================================================
    Шаблон «secret-letter» — анимированный конверт
    ============================================================ */
 .sl-intro {

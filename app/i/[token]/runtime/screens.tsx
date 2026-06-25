@@ -50,6 +50,21 @@ import {
   storyForkTimePickerConfig,
 } from './templateScreens';
 
+/**
+ * Шаблоны с одинаковой структурой «интро → приглашение → подтверждение →
+ * финал» (общий редактор + общий рантайм DateAskInvite/DateAskFinal,
+ * различается только анимированное интро и CSS-тема). Их экраны invite/final
+ * рендерятся одинаково.
+ */
+const SHARED_INVITE_TEMPLATES = new Set([
+  'date-ask',
+  'secret-letter',
+  'mission-date',
+  'movie-poster',
+  'wish-star',
+  'recipe-date',
+]);
+
 /** Props shared by every screen component. */
 export interface ScreenProps {
   /** The screen schema being rendered. */
@@ -817,9 +832,123 @@ function MissionDateIntro({ screen, vars, onAction }: ScreenProps): ReactNode {
   );
 }
 
+/** Шаблон «movie-poster» — экран 1 «Афиша фильма». */
+function MoviePosterIntro({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const button = screen.elements.find((el) => el.kind === 'button');
+  const openAction = button?.action ?? 'click:open';
+
+  return (
+    <ScreenShell kind="intro" screenId={screen.id}>
+      <div className="mv-intro">
+        <motion.div
+          className="mv-poster"
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+        >
+          <span className="mv-poster__genre">Романтика · 2024</span>
+          <h1 className="mv-poster__title">{substitute(heading?.text, vars)}</h1>
+          <span className="mv-poster__stars">★★★★★</span>
+          <span className="mv-poster__premiere">СКОРО В ПРОКАТЕ</span>
+        </motion.div>
+        <motion.button
+          type="button"
+          className="screen__button mv-intro__btn"
+          data-action={openAction}
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          onClick={() => onAction(openAction)}
+        >
+          {substitute(button?.text, vars) || 'Купить билет 🎬'}
+        </motion.button>
+      </div>
+    </ScreenShell>
+  );
+}
+
+/** Шаблон «wish-star» — экран 1 «Ночное небо с падающими звёздами». */
+function WishStarIntro({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const button = screen.elements.find((el) => el.kind === 'button');
+  const openAction = button?.action ?? 'click:open';
+
+  return (
+    <ScreenShell kind="intro" screenId={screen.id}>
+      <div className="ws-intro">
+        {Array.from({ length: 5 }, (_, i) => (
+          <motion.span
+            key={i}
+            className="ws-shooting"
+            style={{ top: `${10 + i * 14}%`, left: `${-10 + i * 5}%` }}
+            animate={{ x: ['0vw', '60vw'], y: ['0vh', '30vh'], opacity: [0, 1, 0] }}
+            transition={{ duration: 2.5, repeat: Infinity, delay: i * 1.1, ease: 'easeIn' }}
+          />
+        ))}
+        <motion.div
+          className="ws-bigstar"
+          aria-hidden
+          animate={{ scale: [1, 1.2, 1], rotate: [0, 12, 0] }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          🌟
+        </motion.div>
+        {heading?.text ? <h1 className="ws-intro__title">{substitute(heading.text, vars)}</h1> : null}
+        <motion.button
+          type="button"
+          className="screen__button ws-intro__btn"
+          data-action={openAction}
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          onClick={() => onAction(openAction)}
+        >
+          {substitute(button?.text, vars) || 'Поймать звезду 🌠'}
+        </motion.button>
+      </div>
+    </ScreenShell>
+  );
+}
+
+/** Шаблон «recipe-date» — экран 1 «Страница кулинарной книги». */
+function RecipeIntro({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const text = screen.elements.find((el) => el.kind === 'text');
+  const button = screen.elements.find((el) => el.kind === 'button');
+  const openAction = button?.action ?? 'click:open';
+
+  return (
+    <ScreenShell kind="intro" screenId={screen.id}>
+      <motion.div
+        className="rc-card"
+        initial={{ opacity: 0, rotate: -2, y: 16 }}
+        animate={{ opacity: 1, rotate: 0, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <span className="rc-card__badge">Рецепт №1</span>
+        <h1 className="rc-card__title">{substitute(heading?.text, vars)}</h1>
+        <div className="rc-card__divider" />
+        {text?.text ? <p className="rc-card__ingredients">{substitute(text.text, vars)}</p> : null}
+        <motion.button
+          type="button"
+          className="screen__button rc-card__btn"
+          data-action={openAction}
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          onClick={() => onAction(openAction)}
+        >
+          {substitute(button?.text, vars) || 'Приготовить 🍳'}
+        </motion.button>
+      </motion.div>
+    </ScreenShell>
+  );
+}
+
 function IntroScreen(props: ScreenProps): ReactNode {
   if (props.templateId === 'mission-date') return MissionDateIntro(props);
   if (props.templateId === 'secret-letter') return SecretLetterEnvelope(props);
+  if (props.templateId === 'movie-poster') return MoviePosterIntro(props);
+  if (props.templateId === 'wish-star') return WishStarIntro(props);
+  if (props.templateId === 'recipe-date') return RecipeIntro(props);
   if (isSimpleDate(props.templateId)) return SimpleDateIntro(props);
   if (isEventRsvp(props.templateId)) return EventRsvpCover(props);
   return (
@@ -948,7 +1077,7 @@ function DateAskInvite({ screen, vars, onAction }: ScreenProps): ReactNode {
 }
 
 function InviteScreen(props: ScreenProps): ReactNode {
-  if (props.templateId === 'date-ask' || props.templateId === 'secret-letter' || props.templateId === 'mission-date') {
+  if (props.templateId && SHARED_INVITE_TEMPLATES.has(props.templateId)) {
     return DateAskInvite(props);
   }
   if (isSimpleDate(props.templateId)) return SimpleDateInvite(props);
@@ -1025,7 +1154,7 @@ function DateAskFinal({ screen, vars }: ScreenProps): ReactNode {
 }
 
 function FinalScreen(props: ScreenProps): ReactNode {
-  if (props.templateId === 'date-ask' || props.templateId === 'secret-letter' || props.templateId === 'mission-date') {
+  if (props.templateId && SHARED_INVITE_TEMPLATES.has(props.templateId)) {
     return DateAskFinal(props);
   }
   if (isSimpleDate(props.templateId)) return SimpleDateFinal(props);
