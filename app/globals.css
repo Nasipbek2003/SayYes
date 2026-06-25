@@ -375,6 +375,75 @@ a {
 }
 
 /* ============================================================
+   Многоэкранные шаблоны — цветовые темы (data-template)
+   ============================================================ */
+
+/* СМС / Тиндер — тёмный мессенджер */
+[data-template="ex-message"] .screen,
+[data-template="tinder-story"] .screen {
+  background: linear-gradient(180deg, #FFE3EC 0%, #FFD0E0 100%);
+}
+[data-template="ex-message"] .screen__heading,
+[data-template="tinder-story"] .screen__heading { color: #C2185B; }
+[data-template="ex-message"] .screen__button,
+[data-template="tinder-story"] .screen__button {
+  background: linear-gradient(135deg, #F0689B, #E8367A); color: #fff;
+}
+
+/* Допрос / Квест — тёмная «комната допроса» / приключение */
+[data-template="interrogation"] .screen {
+  background: radial-gradient(ellipse 60% 40% at 50% 30%, rgba(255,200,0,0.06) 0, transparent 70%), #1C1C24;
+}
+[data-template="interrogation"] .screen__heading { color: #FFD93B; }
+[data-template="interrogation"] .screen__text { color: #B8B8C0; }
+[data-template="interrogation"] .screen__button { background: #FFD93B; color: #1C1C24; font-weight: 600; }
+[data-template="interrogation"] .runaway__no { border-color: #3A3A48; color: #7A7A88; }
+[data-template="interrogation"] .t1-final__text { color: #FFE89B; }
+
+[data-template="quest"] .screen {
+  background: linear-gradient(180deg, #F3E9D2 0%, #E8D5AE 100%);
+}
+[data-template="quest"] .screen__heading { color: #6B4E1F; }
+[data-template="quest"] .screen__text { color: #8A6D3B; }
+[data-template="quest"] .screen__button { background: #B8860B; color: #FFF8E7; }
+[data-template="quest"] .t1-final__text { color: #6B4E1F; }
+
+/* Новость дня — красно-белая студия */
+[data-template="breaking-news"] .screen { background: #F5F5F5; }
+[data-template="breaking-news"] .screen__heading { color: #D32F2F; font-weight: 700; }
+[data-template="breaking-news"] .screen__text { color: #333; }
+[data-template="breaking-news"] .screen__button { background: #D32F2F; color: #fff; }
+[data-template="breaking-news"] .t1-final__text { color: #D32F2F; }
+
+/* Гороскоп — звёздная ночь */
+[data-template="horoscope"] .screen {
+  background: radial-gradient(ellipse 70% 50% at 50% 25%, rgba(140,120,255,0.2) 0, transparent 70%), linear-gradient(180deg, #1A1A40 0, #0D0D26 100%);
+}
+[data-template="horoscope"] .screen__heading { color: #EDE6FF; }
+[data-template="horoscope"] .screen__text { color: #A99FD9; }
+[data-template="horoscope"] .screen__button { background: #8C78FF; color: #fff; }
+[data-template="horoscope"] .runaway__no { border-color: #3A3A66; color: #8079B3; }
+[data-template="horoscope"] .t1-final__text { color: #EDE6FF; }
+
+/* Авиабилет — небесно-голубой */
+[data-template="boarding"] .screen {
+  background: linear-gradient(180deg, #E3F2FD 0%, #BBDEFB 100%);
+}
+[data-template="boarding"] .screen__heading { color: #1565C0; }
+[data-template="boarding"] .screen__text { color: #37658C; }
+[data-template="boarding"] .screen__button { background: #1976D2; color: #fff; }
+[data-template="boarding"] .t1-final__text { color: #1565C0; }
+
+/* Машина времени — сепия */
+[data-template="time-machine"] .screen {
+  background: linear-gradient(180deg, #F0E6D8 0%, #E0D0BA 100%);
+}
+[data-template="time-machine"] .screen__heading { color: #5C4A33; }
+[data-template="time-machine"] .screen__text { color: #7E6A4E; }
+[data-template="time-machine"] .screen__button { background: #A0784A; color: #FBF4E8; }
+[data-template="time-machine"] .t1-final__text { color: #5C4A33; }
+
+/* ============================================================
    Шаблон «movie-poster» — кинопостер
    ============================================================ */
 .mv-intro {

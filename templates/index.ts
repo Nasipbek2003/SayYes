@@ -24,30 +24,44 @@ import { moviePoster } from './movie-poster';
 import { recipeDate } from './recipe-date';
 import { secretLetter } from './secret-letter';
 import { wishStar } from './wish-star';
+import { exMessage } from './ex-message';
+import { interrogation } from './interrogation';
+import { tinderStory } from './tinder-story';
+import { breakingNews } from './breaking-news';
+import { horoscope } from './horoscope';
+import { boarding } from './boarding';
+import { quest } from './quest';
+import { timeMachine } from './time-machine';
 import { eventRsvp } from './event-rsvp';
 import { simpleDate } from './simple-date';
 import { storyFork } from './story-fork';
 import type { TemplateSchema } from './types';
 
-/** All schemas — used by the registry (lookup by id for existing invitations). */
-export const templateSchemas: TemplateSchema[] = [
+/** Многоэкранные и тематические шаблоны — порядок = порядок в галерее. */
+const galleryTemplates: TemplateSchema[] = [
   dateAsk,
   secretLetter,
   missionDate,
   moviePoster,
   wishStar,
   recipeDate,
+  exMessage,
+  interrogation,
+  tinderStory,
+  breakingNews,
+  horoscope,
+  boarding,
+  quest,
+  timeMachine,
+];
+
+/** All schemas — used by the registry (lookup by id for existing invitations). */
+export const templateSchemas: TemplateSchema[] = [
+  ...galleryTemplates,
   simpleDate,
   storyFork,
   eventRsvp,
 ];
 
 /** Only templates shown in the gallery for new invitations. */
-export const gallerySchemas: TemplateSchema[] = [
-  dateAsk,
-  secretLetter,
-  missionDate,
-  moviePoster,
-  wishStar,
-  recipeDate,
-];
+export const gallerySchemas: TemplateSchema[] = galleryTemplates;

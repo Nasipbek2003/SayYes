@@ -155,32 +155,8 @@ export default function HomePage() {
                   <div className={styles.cardBody}>
                     <h3 className={styles.cardTitle}>{template.name}</h3>
                     <p className={styles.cardDesc}>{template.description}</p>
-                    {template.themes.length > 1 && (
-                      <div className={styles.themes}>
-                        <span className={styles.themesLabel}>Цветовая тема</span>
-                        <p className={styles.themesHint}>Меняет цвет фона и оттенок кнопок — нажми для предпросмотра</p>
-                        <div className={styles.themeChips}>
-                          {template.themes.map((theme) => (
-                            <Link
-                              key={theme.id}
-                              href={theme.href}
-                              className={styles.themeChip}
-                              title={theme.label}
-                            >
-                              {/* Мини-превью градиента */}
-                              <span
-                                className={styles.themeSwatch}
-                                style={{ background: theme.gradient }}
-                                aria-hidden="true"
-                              />
-                              {theme.label}
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                     <Link href={template.createHref} className={styles.createButton}>
-                      Создать приглашение
+                      Создать →
                     </Link>
                   </div>
                 </li>

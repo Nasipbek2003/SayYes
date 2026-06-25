@@ -92,6 +92,24 @@ function gradientFor(themeId: string): string {
   return `linear-gradient(135deg, ${palette.backgroundFrom}, ${palette.backgroundTo})`;
 }
 
+/** Отдельная иконка для каждого шаблона (иначе все романтичные одинаковые). */
+const TEMPLATE_EMOJI: Record<string, string> = {
+  'date-ask': '💝',
+  'secret-letter': '✉️',
+  'mission-date': '🕵️',
+  'movie-poster': '🎬',
+  'wish-star': '🌠',
+  'recipe-date': '🍳',
+  quest: '🔍',
+  'time-machine': '⏳',
+  interrogation: '🎤',
+  'tinder-story': '💘',
+  horoscope: '♈',
+  'ex-message': '📱',
+  boarding: '✈️',
+  'breaking-news': '📰',
+};
+
 /** Map one registry summary to a render-ready card view. */
 function toTemplateView(summary: TemplateSummary): GalleryTemplateView {
   // Defensive: a template should always declare at least one theme, but fall
@@ -113,7 +131,7 @@ function toTemplateView(summary: TemplateSummary): GalleryTemplateView {
     name: summary.name,
     description: summary.description,
     previewGradient: gradientFor(defaultThemeId),
-    previewEmoji: resolveOgTheme(defaultThemeId).emoji,
+    previewEmoji: TEMPLATE_EMOJI[summary.id] ?? resolveOgTheme(defaultThemeId).emoji,
     themes,
     createHref: buildCreateHref(summary.id, defaultThemeId),
   };

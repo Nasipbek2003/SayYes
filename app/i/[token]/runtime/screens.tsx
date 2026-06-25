@@ -63,6 +63,14 @@ const SHARED_INVITE_TEMPLATES = new Set([
   'movie-poster',
   'wish-star',
   'recipe-date',
+  'ex-message',
+  'interrogation',
+  'tinder-story',
+  'breaking-news',
+  'horoscope',
+  'boarding',
+  'quest',
+  'time-machine',
 ]);
 
 /** Props shared by every screen component. */
