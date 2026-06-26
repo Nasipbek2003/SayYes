@@ -6,13 +6,9 @@ import {
   issueSessionToken,
   sessionCookieOptions,
 } from '@/lib/auth';
+import { getRequestOrigin } from '@/lib/auth/requestOrigin';
 
 export const runtime = 'nodejs';
-
-function getOrigin(request: Request): string {
-  const url = new URL(request.url);
-  return url.origin;
-}
 
 function serializeCookie(
   name: string,
@@ -27,7 +23,7 @@ function serializeCookie(
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const origin = getOrigin(request);
+  const origin = getRequestOrigin(request);
   const contentType = request.headers.get('content-type') ?? '';
   let email: unknown;
   let password: unknown;

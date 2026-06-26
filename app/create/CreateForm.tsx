@@ -1,14 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import type { PreviewPayload } from '@/lib/services/invitation';
-import type { TemplateField } from '@/templates/types';
+import type { PreviewPayload, PreviewPlace } from '@/lib/services/invitation';
+import type { TemplateField, TemplateSchema } from '@/templates/types';
 import {
   type FormData,
   type PlaceDraft,
   addPlace,
+  buildFieldScreenMap,
   buildInitialData,
   fieldInputKind,
   readPlaces,
@@ -25,7 +26,6 @@ import {
   UnauthorizedError,
   createDraft,
   devActivate,
-  fetchPreview,
   updateDraft,
   uploadPhoto,
 } from './client';
@@ -38,6 +38,10 @@ export interface CreateFormTemplate {
   description: string;
   fields: TemplateField[];
   premiumFeatures: string[];
+  /** First screen the scenario engine should render (for the live preview). */
+  startScreen: string;
+  /** Full screen list, used to render the live in-editor preview locally. */
+  screens: TemplateSchema['screens'];
 }
 
 export interface CreateFormProps {
@@ -49,25 +53,112 @@ export interface CreateFormProps {
 /** Готовые стикеры-картинки (лежат в /public) — для любого image-поля. */
 const STICKERS = ['/1.webp', '/2.webp', '/3.webp', '/4.webp', '/5.webp', '/6.webp', '/7.webp', '/8.webp'];
 
-const TOTAL_STEPS = 3;
-const STEP_LABELS = ['Начало', 'Заполни поля', 'Готово'];
+const STEP_LABELS_START = 'Начало';
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
+type MobileView = 'edit' | 'preview';
 
-export function CreateForm({ template, themeId }: CreateFormProps) {
+export function CreateForm({ template, themeId, isAuthed = false }: CreateFormProps) {
   const router = useRouter();
 
   const [step, setStep] = useState(1);
   const [data, setData] = useState<FormData>(() => buildInitialData({ fields: template.fields }));
   const [invitationId, setInvitationId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('idle');
-  const [preview, setPreview] = useState<PreviewPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activating, setActivating] = useState(false);
+  const [mobileView, setMobileView] = useState<MobileView>('edit');
+  const [activeScreenId, setActiveScreenId] = useState<string>(template.startScreen);
 
   const invitationIdRef = useRef<string | null>(null);
   invitationIdRef.current = invitationId;
 
+  /** Field key → the screen it affects, so the preview follows the editor. */
+  const fieldScreenMap = useMemo(
+    () => buildFieldScreenMap(template.screens, template.fields),
+    [template.screens, template.fields],
+  );
+
+  const focusField = useCallback(
+    (key: string) => setActiveScreenId(fieldScreenMap[key] ?? template.startScreen),
+    [fieldScreenMap, template.startScreen],
+  );
+
+  /**
+   * Поля, сгруппированные по экранам приглашения, в порядке самих экранов.
+   * Каждая группа — отдельный уровень мастера: уровень 2 = экран 1, уровень 3 =
+   * экран 2 и т.д. Поля, не привязанные ни к одному экрану, добавляются в первую
+   * группу.
+   */
+  const fieldGroups = useMemo(() => {
+    const byScreen = new Map<string, TemplateField[]>();
+    const unmapped: TemplateField[] = [];
+    for (const field of template.fields) {
+      const screenId = fieldScreenMap[field.key];
+      if (screenId) {
+        const list = byScreen.get(screenId);
+        if (list) list.push(field);
+        else byScreen.set(screenId, [field]);
+      } else {
+        unmapped.push(field);
+      }
+    }
+    const groups: { screenId: string; fields: TemplateField[] }[] = [];
+    for (const screen of template.screens) {
+      const list = byScreen.get(screen.id);
+      if (list && list.length) groups.push({ screenId: screen.id, fields: list });
+    }
+    if (unmapped.length) {
+      if (groups.length) groups[0] = { ...groups[0], fields: [...unmapped, ...groups[0].fields] };
+      else groups.push({ screenId: template.startScreen, fields: unmapped });
+    }
+    return groups;
+  }, [template.fields, template.screens, template.startScreen, fieldScreenMap]);
+
+  const stepLabels = useMemo(
+    () => [STEP_LABELS_START, ...fieldGroups.map((_, i) => `Экран ${i + 1}`)],
+    [fieldGroups],
+  );
+
+  const groupIndex = step - 2;
+  const currentGroup = groupIndex >= 0 ? fieldGroups[groupIndex] : undefined;
+  const isLastGroup = step === 1 + fieldGroups.length;
+
+  // Превью всегда показывает экран текущего уровня.
+  useEffect(() => {
+    if (currentGroup) setActiveScreenId(currentGroup.screenId);
+  }, [currentGroup]);
+
   const validation = validateAuthorForm(template.id, data);
+
+  /**
+   * Live, client-side preview payload built straight from the form data — no
+   * server round-trip and no draft/auth required, so the author sees changes
+   * instantly while typing. It mirrors the shape the server preview endpoint
+   * returns so {@link PreviewPane} can render it unchanged.
+   */
+  const previewPayload = useMemo<PreviewPayload>(() => {
+    const persisted = toPersistedData(data);
+    const placesKey = template.fields.find((f) => f.type === 'placesList')?.key;
+    const places = placesKey ? ((persisted[placesKey] as PreviewPlace[]) ?? []) : [];
+    return {
+      invitationId: invitationId ?? 'preview',
+      templateId: template.id,
+      themeId,
+      tier: 'BASIC' as PreviewPayload['tier'],
+      features: { showBrandSignature: true, music: false, advancedAnimations: false, authorNotifications: false, premiumFeatures: [] },
+      status: 'DRAFT' as PreviewPayload['status'],
+      template: {
+        name: template.name,
+        description: template.description,
+        startScreen: template.startScreen,
+        screens: template.screens,
+        premiumFeatures: template.premiumFeatures,
+      },
+      data: persisted,
+      places,
+      validation: { ok: validation.ok, errors: [] },
+    };
+  }, [data, template, themeId, invitationId, validation.ok]);
 
   const handleAuthError = useCallback(() => { router.push('/login'); }, [router]);
 
@@ -111,10 +202,13 @@ export function CreateForm({ template, themeId }: CreateFormProps) {
   const setVal = (key: string, value: unknown) => {
     setData((prev) => {
       const next = setFieldValue(prev, key, value);
-      debouncerRef.current?.schedule(next);
+      // Auto-save only once the author is signed in; an anonymous visitor fills
+      // the form freely (the live preview is local) and is asked to sign in only
+      // when they request the link — see onActivate.
+      if (isAuthed) debouncerRef.current?.schedule(next);
       return next;
     });
-    setSaveState('saving');
+    if (isAuthed) setSaveState('saving');
   };
 
   const onUploadImage = async (key: string, file: File) => {
@@ -126,22 +220,6 @@ export function CreateForm({ template, themeId }: CreateFormProps) {
     } catch (err) {
       if (err instanceof UnauthorizedError) handleAuthError();
       else setError(err instanceof ApiError ? err.message : 'Не удалось загрузить фото.');
-    }
-  };
-
-  const onPreview = async () => {
-    setError(null);
-    debouncerRef.current?.flushNow();
-    const id = await ensureDraft(data);
-    if (!id) return;
-    try {
-      await updateDraft(id, { data: toPersistedData(data), themeId });
-      const payload = await fetchPreview(id);
-      setPreview(payload);
-      setStep(3);
-    } catch (err) {
-      if (err instanceof UnauthorizedError) handleAuthError();
-      else setError(err instanceof ApiError ? err.message : 'Не удалось загрузить предпросмотр.');
     }
   };
 
@@ -173,7 +251,7 @@ export function CreateForm({ template, themeId }: CreateFormProps) {
       <span className={`${styles.petal} ${styles.petal4}`} aria-hidden="true" />
 
       <div className={styles.progressBar}>
-        {STEP_LABELS.map((label, i) => {
+        {stepLabels.map((label, i) => {
           const n = i + 1;
           const isActive = n === step;
           const isDone = n < step;
@@ -209,45 +287,77 @@ export function CreateForm({ template, themeId }: CreateFormProps) {
           </div>
         )}
 
-        {/* ═══ Шаг 2: Поля шаблона ═══ */}
-        {step === 2 && (
-          <div className={styles.formStep}>
-            <h2 className={styles.stepTitle}>{template.name}</h2>
-            <p className={styles.stepDesc}>Заполни поля — это увидит приглашённый</p>
-
-            {template.fields.map((field) => (
-              <FieldControl
-                key={field.key}
-                field={field}
-                value={data[field.key]}
-                error={validation.fieldErrors[field.key]}
-                onChange={(v) => setVal(field.key, v)}
-                onUpload={(file) => onUploadImage(field.key, file)}
-              />
-            ))}
-
-            {saveState !== 'idle' && <p className={styles.saveStatus}>{saveLabel[saveState]}</p>}
-            {error && <p className={`${styles.notice} ${styles.noticeError}`}>{error}</p>}
-
-            <div className={styles.stepActions}>
-              <button className={styles.btnBack} onClick={() => setStep(1)}>← Назад</button>
-              <button className={styles.btnPrimary} onClick={onPreview}>Предпросмотр →</button>
+        {/* ═══ Уровни 2…N: по одному экрану на уровень ═══ */}
+        {step >= 2 && currentGroup && (
+          <div className={styles.editorWrap}>
+            <div className={styles.mobileToggle}>
+              <div className={styles.screenTabs}>
+                <button
+                  type="button"
+                  className={`${styles.screenTab} ${mobileView === 'edit' ? styles.screenTabActive : ''}`}
+                  onClick={() => setMobileView('edit')}
+                >
+                  ✏️ Поля
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.screenTab} ${mobileView === 'preview' ? styles.screenTabActive : ''}`}
+                  onClick={() => setMobileView('preview')}
+                >
+                  👁 Превью
+                </button>
+              </div>
             </div>
-          </div>
-        )}
 
-        {/* ═══ Шаг 3: Предпросмотр + Получить ссылку ═══ */}
-        {step === 3 && (
-          <div className={styles.previewStep}>
-            <h2 className={styles.stepTitle}>Предпросмотр</h2>
-            <p className={styles.stepDesc} style={{ marginBottom: 8 }}>Так увидит приглашение адресат</p>
-            {preview ? <PreviewPane preview={preview} /> : <p className={`${styles.notice} ${styles.noticeInfo}`}>Загружаем…</p>}
-            {error && <p className={`${styles.notice} ${styles.noticeError}`}>{error}</p>}
-            <div className={styles.stepActions}>
-              <button className={styles.btnBack} onClick={() => setStep(2)}>← Назад</button>
-              <button className={styles.btnPrimary} onClick={onActivate} disabled={!validation.ok || activating}>
-                {activating ? 'Создаём ссылку…' : 'Получить ссылку'}
-              </button>
+            <div className={styles.editorLayout}>
+              {/* Левая колонка: живой телефон-превью текущего экрана */}
+              <div className={styles.editorPreviewCol} data-hidden={mobileView === 'edit'}>
+                <PreviewPane preview={previewPayload} activeScreenId={activeScreenId} />
+              </div>
+
+              {/* Правая колонка: поля только этого экрана */}
+              <div className={styles.editorForm} data-hidden={mobileView === 'preview'}>
+                <div className={styles.editorHeader}>
+                  <h2 className={styles.editorHeaderTitle}>Экран {groupIndex + 1}</h2>
+                  <p className={styles.editorHeaderDesc}>
+                    Заполняй поля этого экрана — в превью слева сразу видно результат
+                  </p>
+                </div>
+
+                <div className={styles.editorSection}>
+                  {currentGroup.fields.map((field) => (
+                    <FieldControl
+                      key={field.key}
+                      field={field}
+                      value={data[field.key]}
+                      error={validation.fieldErrors[field.key]}
+                      onChange={(v) => setVal(field.key, v)}
+                      onUpload={(file) => onUploadImage(field.key, file)}
+                      onFocus={() => focusField(field.key)}
+                    />
+                  ))}
+                </div>
+
+                {saveState !== 'idle' && <p className={styles.saveStatus}>{saveLabel[saveState]}</p>}
+                {error && <p className={`${styles.notice} ${styles.noticeError}`}>{error}</p>}
+
+                <div className={styles.stepActions}>
+                  <button className={styles.btnBack} onClick={() => setStep(step - 1)}>← Назад</button>
+                  {isLastGroup ? (
+                    <button
+                      className={styles.btnPrimary}
+                      onClick={onActivate}
+                      disabled={!validation.ok || activating}
+                    >
+                      {activating ? 'Создаём ссылку…' : 'Получить ссылку'}
+                    </button>
+                  ) : (
+                    <button className={styles.btnPrimary} onClick={() => setStep(step + 1)}>
+                      Далее →
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -258,13 +368,14 @@ export function CreateForm({ template, themeId }: CreateFormProps) {
 
 /** Контрол одного поля шаблона — выбирается по типу поля. */
 function FieldControl({
-  field, value, error, onChange, onUpload,
+  field, value, error, onChange, onUpload, onFocus,
 }: {
   field: TemplateField;
   value: unknown;
   error?: string;
   onChange: (value: unknown) => void;
   onUpload: (file: File) => void;
+  onFocus?: () => void;
 }) {
   const kind = fieldInputKind(field.type);
   const str = typeof value === 'string' ? value : '';
@@ -278,7 +389,7 @@ function FieldControl({
 
   if (kind === 'image') {
     return (
-      <div className={styles.field}>
+      <div className={styles.field} onFocusCapture={onFocus} onPointerDownCapture={onFocus}>
         {label}
         <ImagePicker value={str} onPick={onChange} onUpload={onUpload} />
         {error ? <span className={styles.error}>{error}</span> : null}
@@ -288,7 +399,7 @@ function FieldControl({
 
   if (kind === 'checkbox') {
     return (
-      <div className={styles.checkboxRow}>
+      <div className={styles.checkboxRow} onFocusCapture={onFocus} onPointerDownCapture={onFocus}>
         <input type="checkbox" className={styles.checkbox} checked={value === true} onChange={(e) => onChange(e.target.checked)} />
         <label className={styles.label}>{field.label}</label>
       </div>
@@ -297,7 +408,7 @@ function FieldControl({
 
   if (kind === 'places') {
     return (
-      <div className={styles.field}>
+      <div className={styles.field} onFocusCapture={onFocus} onPointerDownCapture={onFocus}>
         {label}
         <PlacesEditor places={readPlaces(value)} onChange={onChange} />
         {error ? <span className={styles.error}>{error}</span> : null}
@@ -307,7 +418,7 @@ function FieldControl({
 
   if (kind === 'textarea') {
     return (
-      <div className={styles.field}>
+      <div className={styles.field} onFocusCapture={onFocus}>
         {label}
         <textarea
           className={error ? `${styles.textarea} ${styles['textarea--error']}` : styles.textarea}
@@ -322,7 +433,7 @@ function FieldControl({
   }
 
   return (
-    <div className={styles.field}>
+    <div className={styles.field} onFocusCapture={onFocus}>
       {label}
       <input
         type={kind === 'datetime' ? 'datetime-local' : 'text'}

@@ -83,7 +83,7 @@ function validateField(field: TemplateField, value: unknown): ValidationError[] 
       errors.push({
         field: field.key,
         code: 'required',
-        message: `Field "${field.label}" is required.`,
+        message: `Заполни поле «${field.label}».`,
       });
     }
     // An absent optional field needs no further checks.

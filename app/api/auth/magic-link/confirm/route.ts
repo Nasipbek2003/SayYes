@@ -14,7 +14,7 @@ import {
   issueSessionToken,
   sessionCookieOptions,
 } from '@/lib/auth';
-import { env } from '@/lib/env';
+import { getRequestOrigin } from '@/lib/auth/requestOrigin';
 
 export const runtime = 'nodejs';
 
@@ -31,9 +31,10 @@ export async function GET(request: Request): Promise<Response> {
   const token = url.searchParams.get('token');
   const redirectTo = url.searchParams.get('redirect');
   const result = await authenticate(token);
+  const origin = getRequestOrigin(request);
 
   if (!result.ok) {
-    const dest = new URL('/login', env.appUrl);
+    const dest = new URL('/login', origin);
     dest.searchParams.set('error', result.reason);
     if (redirectTo) dest.searchParams.set('redirect', redirectTo);
     return new Response(null, { status: 303, headers: { Location: dest.toString() } });
@@ -42,8 +43,8 @@ export async function GET(request: Request): Promise<Response> {
   const sessionToken = await issueSessionToken(result.authorId);
   // Redirect to the original destination (e.g. /create?template=...) or cabinet.
   const dest = redirectTo
-    ? new URL(redirectTo, env.appUrl)
-    : new URL('/me/invitations', env.appUrl);
+    ? new URL(redirectTo, origin)
+    : new URL('/me/invitations', origin);
 
   // Response.redirect() is immutable — set the cookie via a manual Response
   // instead of trying to append headers after the fact.

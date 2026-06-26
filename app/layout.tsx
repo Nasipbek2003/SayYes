@@ -46,8 +46,10 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <Header />
-        {children}
+        <div className="page-wrap">
+          <Header />
+          {children}
+        </div>
       </body>
     </html>
   );

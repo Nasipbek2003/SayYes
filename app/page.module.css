@@ -96,6 +96,13 @@
   flex-wrap: wrap;
 }
 
+@media (max-width: 768px) {
+  .heroCtas {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
 .ctaPrimary {
   display: inline-block;
   background: var(--accent);

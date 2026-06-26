@@ -15,7 +15,7 @@
  * The author can replay the scenario from the start (`Сначала`) since they may
  * walk a fork to a final screen while editing.
  */
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { ScenarioEngine } from '@/lib/scenario/engine';
@@ -28,6 +28,12 @@ import { ScreenRenderer } from '@/app/i/[token]/runtime/screens';
 export interface PreviewPaneProps {
   /** Draft preview payload from the preview endpoint. */
   preview: PreviewPayload;
+  /**
+   * When set, drives the preview to this screen (a direct {@link
+   * ScenarioEngine.goTo} jump). The author form uses it so focusing a field
+   * shows the screen that field affects. Ignored when the screen id is unknown.
+   */
+  activeScreenId?: string;
 }
 
 /** Reconstruct a template schema sufficient to drive the engine for preview. */
@@ -45,7 +51,7 @@ function schemaFromPreview(preview: PreviewPayload): TemplateSchema {
 }
 
 /** Interactive, non-recording preview of the invitation scenario. */
-export function PreviewPane({ preview }: PreviewPaneProps) {
+export function PreviewPane({ preview, activeScreenId }: PreviewPaneProps) {
   const engineRef = useRef<ScenarioEngine | null>(null);
   if (engineRef.current === null) {
     engineRef.current = new ScenarioEngine(schemaFromPreview(preview));
@@ -54,6 +60,18 @@ export function PreviewPane({ preview }: PreviewPaneProps) {
 
   const [, setTick] = useState(0);
   const screen = engine.current;
+
+  // Follow the editor: when the author focuses a field, jump the preview to the
+  // screen that field affects. A no-op when already there or the id is unknown.
+  useEffect(() => {
+    if (!activeScreenId || engine.current.id === activeScreenId) return;
+    try {
+      engine.goTo(activeScreenId);
+      setTick((n) => n + 1);
+    } catch {
+      // Unknown screen id — ignore and keep the current screen.
+    }
+  }, [activeScreenId, engine]);
 
   const vars = useMemo(
     () => buildScreenVars(preview.data, engine.context),
@@ -80,35 +98,39 @@ export function PreviewPane({ preview }: PreviewPaneProps) {
         </button>
       </div>
 
-      <div className="preview-pane__device">
-        <main
-          className="invitation-runtime"
-          data-template={preview.templateId}
-          data-theme={preview.themeId}
-        >
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={screen.id}
-              className="screen-motion"
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -24 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-            >
-              <ScreenRenderer
-                screen={screen}
-                vars={vars}
-                onAction={handleAction}
-                templateId={preview.templateId}
-                places={preview.places}
-              />
-            </motion.div>
-          </AnimatePresence>
+      {/* Телефонная рамка */}
+      <div className="preview-pane__phone">
+        <div className="preview-pane__notch" aria-hidden="true" />
+        <div className="preview-pane__screen">
+          <main
+            className="invitation-runtime"
+            data-template={preview.templateId}
+            data-theme={preview.themeId}
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={screen.id}
+                className="screen-motion"
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -24 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+              >
+                <ScreenRenderer
+                  screen={screen}
+                  vars={vars}
+                  onAction={handleAction}
+                  templateId={preview.templateId}
+                  places={preview.places}
+                />
+              </motion.div>
+            </AnimatePresence>
 
-          {preview.features.showBrandSignature ? (
-            <footer className="brand-signature">Сделано с ♥ на SayYes</footer>
-          ) : null}
-        </main>
+            {preview.features.showBrandSignature ? (
+              <footer className="brand-signature">Сделано с ♥ на SayYes</footer>
+            ) : null}
+          </main>
+        </div>
       </div>
     </div>
   );

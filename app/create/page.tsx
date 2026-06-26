@@ -64,6 +64,8 @@ export default async function CreatePage({
           description: template.description,
           fields: template.fields,
           premiumFeatures: template.premiumFeatures,
+          startScreen: template.startScreen,
+          screens: template.screens,
         }}
         themeId={resolvedTheme}
         isAuthed={!!authorId}

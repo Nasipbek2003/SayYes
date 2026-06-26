@@ -21,6 +21,7 @@
  */
 import { templateRegistry } from '@/lib/templates/registry';
 import type {
+  ScreenSchema,
   TemplateField,
   TemplateFieldType,
   TemplateRegistry,
@@ -229,4 +230,42 @@ export function toPersistedData(data: FormData): FormData {
     }
   }
   return out;
+}
+
+/** Matches `{{ ключ }}` placeholders in screen element text/src. */
+const FIELD_PLACEHOLDER = /\{\{\s*([^}]+?)\s*\}\}/g;
+
+/**
+ * Map each author field to the first scenario screen that references it — via a
+ * `{{ключ}}` placeholder in an element's text/src, or an element's `field`.
+ *
+ * The author form uses this to follow the editor with the live preview: when an
+ * author focuses a field, the preview jumps to the screen that field affects.
+ * Fields not referenced by any screen are simply absent from the map (callers
+ * fall back to the start screen).
+ */
+export function buildFieldScreenMap(
+  screens: ReadonlyArray<ScreenSchema>,
+  fields: ReadonlyArray<TemplateField>,
+): Record<string, string> {
+  const fieldKeys = new Set(fields.map((f) => f.key));
+  const map: Record<string, string> = {};
+  for (const screen of screens) {
+    for (const element of screen.elements) {
+      const refs = new Set<string>();
+      for (const text of [element.text, element.src]) {
+        if (!text) continue;
+        FIELD_PLACEHOLDER.lastIndex = 0;
+        let match: RegExpExecArray | null;
+        while ((match = FIELD_PLACEHOLDER.exec(text)) !== null) {
+          refs.add(match[1].trim());
+        }
+      }
+      if (element.field) refs.add(element.field);
+      for (const key of refs) {
+        if (fieldKeys.has(key) && !(key in map)) map[key] = screen.id;
+      }
+    }
+  }
+  return map;
 }
