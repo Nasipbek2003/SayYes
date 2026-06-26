@@ -10,10 +10,12 @@ import type { TemplateField } from './types';
 
 export const fName: TemplateField = {
   key: 'имя_адресата', label: 'Имя адресата', type: 'text', required: true, maxLength: 60,
+  placeholder: 'Например: Аля',
 };
 
 export const fSignature: TemplateField = {
   key: 'подпись', label: 'Ваше имя (подпись)', type: 'text', required: true, maxLength: 60,
+  placeholder: 'Например: Тимур',
 };
 
 export function fPhoto(label = 'Картинка'): TemplateField {
@@ -21,18 +23,21 @@ export function fPhoto(label = 'Картинка'): TemplateField {
 }
 
 export function fInviteText(label = 'Текст приглашения'): TemplateField {
-  return { key: 'screen1_title', label, type: 'longtext', required: true, maxLength: 300 };
+  return {
+    key: 'screen1_title', label, type: 'longtext', required: true, maxLength: 300,
+    defaultValue: 'Пойдёшь со мной на свидание?',
+  };
 }
 
-export const fBtnYes: TemplateField = { key: 'btn_yes', label: 'Кнопка «Да»', type: 'text', required: false, maxLength: 30 };
-export const fBtnNo: TemplateField = { key: 'btn_no', label: 'Кнопка «Нет»', type: 'text', required: false, maxLength: 30 };
+export const fBtnYes: TemplateField = { key: 'btn_yes', label: 'Кнопка «Да»', type: 'text', required: false, maxLength: 30, defaultValue: 'Да' };
+export const fBtnNo: TemplateField = { key: 'btn_no', label: 'Кнопка «Нет»', type: 'text', required: false, maxLength: 30, defaultValue: 'Нет' };
 
 /** Группа полей экрана подтверждения. */
 export const confirmFields: TemplateField[] = [
   { key: 'screen2_image', label: 'Картинка подтверждения', type: 'image', required: false },
-  { key: 'screen2_title', label: 'Заголовок подтверждения', type: 'longtext', required: false, maxLength: 300 },
-  { key: 'screen2_subtitle', label: 'Подзаголовок подтверждения', type: 'longtext', required: false, maxLength: 300 },
-  { key: 'btn_confirm', label: 'Кнопка подтверждения', type: 'text', required: false, maxLength: 30 },
+  { key: 'screen2_title', label: 'Заголовок подтверждения', type: 'longtext', required: false, maxLength: 300, defaultValue: 'Ура, я так рада! 🎉' },
+  { key: 'screen2_subtitle', label: 'Подзаголовок подтверждения', type: 'longtext', required: false, maxLength: 300, defaultValue: 'Скоро напишу все детали нашей встречи 💛' },
+  { key: 'btn_confirm', label: 'Кнопка подтверждения', type: 'text', required: false, maxLength: 30, defaultValue: 'Подтвердить' },
 ];
 
 /**

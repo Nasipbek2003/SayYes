@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Check, Eye, Mail, Pencil } from 'lucide-react';
 
 import type { PreviewPayload, PreviewPlace } from '@/lib/services/invitation';
 import type { TemplateField, TemplateSchema } from '@/templates/types';
@@ -68,6 +69,13 @@ export function CreateForm({ template, themeId, isAuthed = false }: CreateFormPr
   const [activating, setActivating] = useState(false);
   const [mobileView, setMobileView] = useState<MobileView>('edit');
   const [activeScreenId, setActiveScreenId] = useState<string>(template.startScreen);
+  /** Поля, которые автор уже редактировал — ошибки показываем только для них. */
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const markTouched = useCallback(
+    (key: string) => setTouched((t) => (t[key] ? t : { ...t, [key]: true })),
+    [],
+  );
 
   const invitationIdRef = useRef<string | null>(null);
   invitationIdRef.current = invitationId;
@@ -225,7 +233,12 @@ export function CreateForm({ template, themeId, isAuthed = false }: CreateFormPr
 
   const onActivate = async () => {
     setError(null);
-    if (!validation.ok) { setError('Заполни обязательные поля.'); return; }
+    if (!validation.ok) {
+      // Подсветить незаполненные обязательные поля.
+      setTouched(Object.fromEntries(template.fields.map((f) => [f.key, true])));
+      setError('Заполни обязательные поля.');
+      return;
+    }
     setActivating(true);
     debouncerRef.current?.flushNow();
     const id = await ensureDraft(data);
@@ -241,7 +254,7 @@ export function CreateForm({ template, themeId, isAuthed = false }: CreateFormPr
     }
   };
 
-  const saveLabel: Record<SaveState, string> = { idle: '', saving: 'Сохранение…', saved: 'Сохранено ✓', error: 'Ошибка сохранения' };
+  const saveLabel: Record<SaveState, string> = { idle: '', saving: 'Сохранение…', saved: 'Сохранено', error: 'Ошибка сохранения' };
 
   return (
     <div className={styles.wizard}>
@@ -260,7 +273,7 @@ export function CreateForm({ template, themeId, isAuthed = false }: CreateFormPr
               {i > 0 && <span className={`${styles.progressLine} ${isDone || isActive ? styles.progressLineDone : ''}`} />}
               <div className={styles.progressStep}>
                 <span className={`${styles.progressDot} ${isActive ? styles.progressDotActive : ''} ${isDone ? styles.progressDotDone : ''}`}>
-                  {isDone ? '✓' : n}
+                  {isDone ? <Check size={18} strokeWidth={3} /> : n}
                 </span>
                 <span className={`${styles.progressLabel} ${isActive ? styles.progressLabelActive : ''} ${isDone ? styles.progressLabelDone : ''}`}>
                   {label}
@@ -276,7 +289,7 @@ export function CreateForm({ template, themeId, isAuthed = false }: CreateFormPr
         {step === 1 && (
           <div className={styles.startScreen}>
             <div className={styles.startCard}>
-              <span className={styles.startEmoji}>💌</span>
+              <span className={styles.startEmoji}><Mail size={44} strokeWidth={1.5} color="#E8367A" /></span>
               <h1 className={styles.startTitle}>{template.name}</h1>
               <p className={styles.startDesc}>{template.description}</p>
               <div className={styles.welcomeActions}>
@@ -297,14 +310,14 @@ export function CreateForm({ template, themeId, isAuthed = false }: CreateFormPr
                   className={`${styles.screenTab} ${mobileView === 'edit' ? styles.screenTabActive : ''}`}
                   onClick={() => setMobileView('edit')}
                 >
-                  ✏️ Поля
+                  <Pencil size={15} /> Поля
                 </button>
                 <button
                   type="button"
                   className={`${styles.screenTab} ${mobileView === 'preview' ? styles.screenTabActive : ''}`}
                   onClick={() => setMobileView('preview')}
                 >
-                  👁 Превью
+                  <Eye size={16} /> Превью
                 </button>
               </div>
             </div>
@@ -330,10 +343,11 @@ export function CreateForm({ template, themeId, isAuthed = false }: CreateFormPr
                       key={field.key}
                       field={field}
                       value={data[field.key]}
-                      error={validation.fieldErrors[field.key]}
+                      error={touched[field.key] ? validation.fieldErrors[field.key] : undefined}
                       onChange={(v) => setVal(field.key, v)}
                       onUpload={(file) => onUploadImage(field.key, file)}
                       onFocus={() => focusField(field.key)}
+                      onBlur={() => markTouched(field.key)}
                     />
                   ))}
                 </div>
@@ -368,7 +382,7 @@ export function CreateForm({ template, themeId, isAuthed = false }: CreateFormPr
 
 /** Контрол одного поля шаблона — выбирается по типу поля. */
 function FieldControl({
-  field, value, error, onChange, onUpload, onFocus,
+  field, value, error, onChange, onUpload, onFocus, onBlur,
 }: {
   field: TemplateField;
   value: unknown;
@@ -376,6 +390,7 @@ function FieldControl({
   onChange: (value: unknown) => void;
   onUpload: (file: File) => void;
   onFocus?: () => void;
+  onBlur?: () => void;
 }) {
   const kind = fieldInputKind(field.type);
   const str = typeof value === 'string' ? value : '';
@@ -418,12 +433,13 @@ function FieldControl({
 
   if (kind === 'textarea') {
     return (
-      <div className={styles.field} onFocusCapture={onFocus}>
+      <div className={styles.field} onFocusCapture={onFocus} onBlurCapture={onBlur}>
         {label}
         <textarea
           className={error ? `${styles.textarea} ${styles['textarea--error']}` : styles.textarea}
           value={str}
           maxLength={field.maxLength}
+          placeholder={field.placeholder}
           onChange={(e) => onChange(e.target.value)}
         />
         {field.maxLength ? <span className={styles.charCount}>{str.length}/{field.maxLength}</span> : null}
@@ -433,13 +449,14 @@ function FieldControl({
   }
 
   return (
-    <div className={styles.field} onFocusCapture={onFocus}>
+    <div className={styles.field} onFocusCapture={onFocus} onBlurCapture={onBlur}>
       {label}
       <input
         type={kind === 'datetime' ? 'datetime-local' : 'text'}
         className={error ? `${styles.input} ${styles['input--error']}` : styles.input}
         value={str}
         maxLength={field.maxLength}
+        placeholder={field.placeholder}
         onChange={(e) => onChange(e.target.value)}
       />
       {error ? <span className={styles.error}>{error}</span> : null}

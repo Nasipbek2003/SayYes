@@ -38,10 +38,12 @@
 /* ─── Прогресс-бар ─── */
 .progressBar {
   display: flex;
-  align-items: center;
+  /* Выравниваем по верхнему краю, чтобы линия шла через середину кружков,
+     а не через середину блока «кружок + подпись» */
+  align-items: flex-start;
   gap: 0;
   padding: 36px 40px 28px;
-  max-width: 680px;
+  max-width: 720px;
   margin: 0 auto;
   width: 100%;
   position: relative;
@@ -52,6 +54,7 @@
   .progressBar { padding: 24px 12px 16px; }
   .progressDot { width: 32px; height: 32px; font-size: 13px; }
   .progressLabel { font-size: 10px; }
+  .progressLine { margin-top: 14px; }
 }
 
 .progressLine {
@@ -60,6 +63,9 @@
   background: #F5C6C6;
   border-radius: 2px;
   transition: background 0.3s;
+  /* Сдвигаем линию вниз на половину кружка, чтобы она шла через его центр */
+  margin-top: 20px;
+  /* На мобильном кружок 32px — пересчитывается через media query ниже */
 }
 
 .progressLineDone {
@@ -151,6 +157,9 @@
 .startEmoji {
   font-size: 56px;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .startTitle {
@@ -831,6 +840,9 @@
   padding: 8px 20px;
   border-radius: 999px;
   transition: background 0.15s, color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .screenTabActive {

@@ -44,6 +44,18 @@ export interface TemplateField {
    * places.
    */
   maxLength?: number;
+  /**
+   * Example/hint text shown in the empty input (greyed placeholder) so the
+   * author understands what to write, e.g. «Например: Пойдёшь со мной на
+   * свидание?». Not persisted — purely a UI hint.
+   */
+  placeholder?: string;
+  /**
+   * Default value used to seed the form when no draft value exists, e.g. «Да» /
+   * «Нет» for button labels. Unlike {@link placeholder} this is a real value the
+   * author can edit and that appears in the preview.
+   */
+  defaultValue?: string;
 }
 
 /** Kinds of screens the scenario engine knows how to render. */

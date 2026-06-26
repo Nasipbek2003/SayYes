@@ -75,7 +75,8 @@ function defaultValueFor(field: TemplateField): unknown {
     case 'placesList':
       return [] as PlaceDraft[];
     default:
-      return '';
+      // Prefer an explicit template default (e.g. button labels «Да»/«Нет»).
+      return field.defaultValue ?? '';
   }
 }
 

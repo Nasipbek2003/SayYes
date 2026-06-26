@@ -17,6 +17,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Heart, RotateCcw } from 'lucide-react';
 
 import { ScenarioEngine } from '@/lib/scenario/engine';
 import type { PreviewPayload } from '@/lib/services/invitation';
@@ -94,7 +95,7 @@ export function PreviewPane({ preview, activeScreenId }: PreviewPaneProps) {
       <div className="preview-pane__toolbar">
         <span className="preview-pane__hint">Предпросмотр</span>
         <button type="button" className="preview-pane__restart" onClick={restart}>
-          ↺ Сначала
+          <RotateCcw size={13} /> Сначала
         </button>
       </div>
 
@@ -127,7 +128,9 @@ export function PreviewPane({ preview, activeScreenId }: PreviewPaneProps) {
             </AnimatePresence>
 
             {preview.features.showBrandSignature ? (
-              <footer className="brand-signature">Сделано с ♥ на SayYes</footer>
+              <footer className="brand-signature">
+                Сделано с <Heart size={12} fill="currentColor" strokeWidth={0} style={{ display: 'inline', verticalAlign: 'middle' }} /> на SayYes
+              </footer>
             ) : null}
           </main>
         </div>

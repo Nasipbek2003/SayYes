@@ -147,10 +147,11 @@ export default function HomePage() {
                     style={{ background: template.previewGradient }}
                     aria-label={`Создать по шаблону «${template.name}»`}
                   >
-                    <span className={styles.previewEmoji} aria-hidden="true">
-                      {template.previewEmoji}
-                    </span>
-                    <span className={styles.previewLabel}>Выбрать</span>
+                    <div className={styles.previewPhone}>
+                      <span className={styles.previewEmoji} aria-hidden="true">
+                        {template.previewEmoji}
+                      </span>
+                    </div>
                   </Link>
                   <div className={styles.cardBody}>
                     <h3 className={styles.cardTitle}>{template.name}</h3>
