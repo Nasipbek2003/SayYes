@@ -11,6 +11,19 @@
   margin-bottom: 24px;
 }
 
+.profileLink {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.profileLink:hover {
+  text-decoration: underline;
+}
+
 .title {
   font-family: var(--font-serif);
   font-size: 26px;

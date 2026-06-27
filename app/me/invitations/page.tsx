@@ -33,6 +33,9 @@ export default async function CabinetListPage() {
         <p className={styles.subtitle}>
           Отслеживай статусы, открытия и ответы по своим приглашениям.
         </p>
+        <Link href="/me/profile" className={styles.profileLink}>
+          Профиль →
+        </Link>
       </header>
 
       {invitations.length === 0 ? (
