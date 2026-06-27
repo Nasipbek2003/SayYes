@@ -155,3 +155,28 @@ export async function devActivate(
   );
   return parseJson<{ url: string; token: string }>(res);
 }
+
+/** Result of a Telegram-nickname reachability check. */
+export interface TelegramLinkStatus {
+  /** Whether the input is a structurally valid Telegram username. */
+  valid: boolean;
+  /** Whether the bot already has a chat with this user (can send messages). */
+  linked: boolean;
+}
+
+/**
+ * Check whether the bot can message a given Telegram nickname (i.e. that user
+ * has pressed Start). Throws {@link UnauthorizedError} on 401 so the caller can
+ * fall back to the "press Start" guidance.
+ */
+export async function checkTelegramLink(
+  username: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<TelegramLinkStatus> {
+  const res = await fetchImpl(
+    `/api/telegram/contact?username=${encodeURIComponent(username)}`,
+  );
+  if (res.status === 401) throw new UnauthorizedError();
+  if (!res.ok) return { valid: false, linked: false };
+  return (await res.json()) as TelegramLinkStatus;
+}

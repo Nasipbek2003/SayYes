@@ -1084,3 +1084,19 @@
   text-decoration: none;
   align-self: flex-start;
 }
+
+.tgConnectActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tgOk {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #2E9E5B;
+}

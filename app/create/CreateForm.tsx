@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, Eye, Mail, Pencil, Send } from 'lucide-react';
+import { Check, Eye, Mail, Pencil, Send, RefreshCw } from 'lucide-react';
 
 import type { PreviewPayload, PreviewPlace } from '@/lib/services/invitation';
 import type { TemplateField, TemplateSchema } from '@/templates/types';
@@ -25,6 +25,7 @@ import { AUTOSAVE_DEBOUNCE_MS, Debouncer } from '@/lib/create/autosave';
 import {
   ApiError,
   UnauthorizedError,
+  checkTelegramLink,
   createDraft,
   devActivate,
   updateDraft,
@@ -59,6 +60,8 @@ const STICKERS = ['/1.webp', '/2.webp', '/3.webp', '/4.webp', '/5.webp', '/6.web
 const STEP_LABELS_START = 'Начало';
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 type MobileView = 'edit' | 'preview';
+/** Telegram-ник: статус проверки доступа бота к аккаунту. */
+type TgStatus = 'idle' | 'checking' | 'invalid' | 'linked' | 'not_linked';
 
 export function CreateForm({ template, themeId, isAuthed = false, botUsername }: CreateFormProps) {
   const router = useRouter();
@@ -73,6 +76,8 @@ export function CreateForm({ template, themeId, isAuthed = false, botUsername }:
   const [activeScreenId, setActiveScreenId] = useState<string>(template.startScreen);
   /** Telegram-ник автора — туда придёт уведомление, когда гость ответит. */
   const [notifyTelegram, setNotifyTelegram] = useState('');
+  /** Статус проверки: может ли бот написать на этот ник. */
+  const [tgStatus, setTgStatus] = useState<TgStatus>('idle');
   /** Поля, которые автор уже редактировал — ошибки показываем только для них. */
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
@@ -244,6 +249,34 @@ export function CreateForm({ template, themeId, isAuthed = false, botUsername }:
     }
   };
 
+  /** Проверить, может ли бот написать на указанный ник. */
+  const verifyTelegram = useCallback(async (value: string) => {
+    const trimmed = value.trim();
+    if (trimmed === '') {
+      setTgStatus('idle');
+      return;
+    }
+    setTgStatus('checking');
+    try {
+      const { valid, linked } = await checkTelegramLink(trimmed);
+      setTgStatus(!valid ? 'invalid' : linked ? 'linked' : 'not_linked');
+    } catch {
+      // 401 или сетевая ошибка — считаем, что доступ ещё не подтверждён.
+      setTgStatus('not_linked');
+    }
+  }, []);
+
+  // Автопроверка ника с задержкой, пока автор печатает.
+  useEffect(() => {
+    if (notifyTelegram.trim() === '') {
+      setTgStatus('idle');
+      return;
+    }
+    setTgStatus('checking');
+    const timer = setTimeout(() => void verifyTelegram(notifyTelegram), 700);
+    return () => clearTimeout(timer);
+  }, [notifyTelegram, verifyTelegram]);
+
   const onUploadImage = async (key: string, file: File) => {    const id = await ensureDraft(data);
     if (!id) return;
     try {
@@ -398,24 +431,50 @@ export function CreateForm({ template, themeId, isAuthed = false, botUsername }:
                       inputMode="text"
                       onChange={(e) => onChangeTelegram(e.target.value)}
                     />
-                    <span className={styles.fileHint}>
-                      Когда кто-то ответит на приглашение, пришлём уведомление в Telegram.
-                    </span>
-                    {botUsername && notifyTelegram.trim() !== '' && (
+
+                    {tgStatus === 'checking' && (
+                      <span className={styles.fileHint}>Проверяем доступ…</span>
+                    )}
+
+                    {tgStatus === 'invalid' && (
+                      <span className={styles.error}>
+                        Это не похоже на ник Telegram. Пример: @anna_ivanova
+                      </span>
+                    )}
+
+                    {tgStatus === 'linked' && (
+                      <span className={styles.tgOk}>
+                        <Check size={15} strokeWidth={3} /> Telegram подключён —
+                        уведомления придут сюда.
+                      </span>
+                    )}
+
+                    {tgStatus === 'not_linked' && (
                       <div className={styles.tgConnect}>
                         <p className={styles.tgConnectText}>
-                          Чтобы уведомление дошло, открой нашего бота и нажми{' '}
-                          <strong>Start</strong> — иначе Telegram не разрешит ему
-                          тебе написать. Это нужно сделать один раз.
+                          Пока не могу писать на этот ник. Открой бота, нажми{' '}
+                          <strong>Start</strong>, потом вернись и нажми «Проверить».
+                          Это нужно один раз.
                         </p>
-                        <a
-                          className={styles.btnSecondary}
-                          href={`https://t.me/${botUsername}?start=notify`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <Send size={16} /> Открыть бота @{botUsername}
-                        </a>
+                        <div className={styles.tgConnectActions}>
+                          {botUsername && (
+                            <a
+                              className={styles.btnSecondary}
+                              href={`https://t.me/${botUsername}?start=notify`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Send size={16} /> Открыть бота
+                            </a>
+                          )}
+                          <button
+                            type="button"
+                            className={styles.btnSecondary}
+                            onClick={() => void verifyTelegram(notifyTelegram)}
+                          >
+                            <RefreshCw size={16} /> Проверить
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
