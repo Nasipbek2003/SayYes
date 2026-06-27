@@ -13,6 +13,7 @@ import type {
 } from '@/lib/services/invitation';
 
 import { CopyLinkButton } from '../CabinetActions';
+import { LocalTime } from '@/app/components/LocalTime';
 import styles from '../cabinet.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -29,16 +30,6 @@ const RSVP_LABEL: Record<'yes' | 'no' | 'unknown', string> = {
   no: 'Не смогу',
   unknown: '—',
 };
-
-function formatDate(date: Date): string {
-  return new Date(date).toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
 
 export default async function CabinetDetailPage({
   params,
@@ -114,7 +105,7 @@ export default async function CabinetDetailPage({
                 <span className={styles.eventEmoji}>👁</span>
                 <div>
                   <p className={styles.eventMain}>Ссылку открыли</p>
-                  <p className={styles.eventMeta}>{formatDate(open.openedAt)}</p>
+                  <p className={styles.eventMeta}><LocalTime date={open.openedAt} /></p>
                 </div>
               </div>
             ))}
@@ -172,7 +163,7 @@ export default async function CabinetDetailPage({
                     <p className={styles.eventMain}>
                       {describeOutcome(response.outcome)}
                     </p>
-                    <p className={styles.eventMeta}>{formatDate(response.createdAt)}</p>
+                    <p className={styles.eventMeta}><LocalTime date={response.createdAt} /></p>
                   </div>
                 </div>
               ))}

@@ -6,6 +6,7 @@ import { invitationService } from '@/lib/services/invitation';
 import type { CabinetStatus } from '@/lib/services/invitation';
 
 import { CopyLinkButton, DeleteInvitationButton, DeleteAccountButton } from './CabinetActions';
+import { LocalTime } from '@/app/components/LocalTime';
 import styles from './cabinet.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -16,16 +17,6 @@ const STATUS_LABEL: Record<CabinetStatus, string> = {
   responded: 'Отвечено',
   expired: 'Недоступно',
 };
-
-function formatDate(date: Date): string {
-  return new Date(date).toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
 
 export default async function CabinetListPage() {
   const authorId = await getCurrentAuthorId();
@@ -60,8 +51,8 @@ export default async function CabinetListPage() {
                 <div>
                   <h2 className={styles.cardTitle}>{item.templateName}</h2>
                   <span className={styles.cardDate}>
-                    Создано: {formatDate(item.createdAt)}
-                    {item.activatedAt && ` · Активировано: ${formatDate(item.activatedAt)}`}
+                    Создано: <LocalTime date={item.createdAt} />
+                    {item.activatedAt && <> · Активировано: <LocalTime date={item.activatedAt} /></>}
                   </span>
                 </div>
                 <span className={`${styles.badge} ${styles[`badge--${item.cabinetStatus}`]}`}>
