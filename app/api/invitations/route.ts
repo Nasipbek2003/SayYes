@@ -20,6 +20,7 @@ interface CreateBody {
   templateId?: unknown;
   themeId?: unknown;
   data?: unknown;
+  notifyTelegram?: unknown;
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -49,12 +50,16 @@ export async function POST(request: Request): Promise<Response> {
       ? (body.data as Record<string, unknown>)
       : {};
 
+  const notifyTelegram =
+    typeof body.notifyTelegram === 'string' ? body.notifyTelegram : null;
+
   try {
     const invitation = await invitationService.createDraft(
       authorId,
       body.templateId,
       body.themeId,
       data,
+      notifyTelegram,
     );
     return Response.json(invitation, { status: 201 });
   } catch (error) {

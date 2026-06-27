@@ -16,7 +16,9 @@ import type { Author, NotificationOutbox } from '@prisma/client';
 import {
   OutboxWorker,
   type WorkerAuthorRepo,
+  type WorkerInvitationRepo,
   type WorkerOutboxRepo,
+  type WorkerTelegramContactRepo,
 } from './outboxWorker';
 import type { RetryPolicy } from './backoff';
 import type { TelegramClient, TelegramMessage } from './telegram';
@@ -57,6 +59,23 @@ function makeOutboxRepo(initial: NotificationOutbox[]) {
 function makeAuthorRepo(authors: Author[]): WorkerAuthorRepo {
   const map = new Map(authors.map((a) => [a.id, a]));
   return { findById: async (id) => map.get(id) ?? null };
+}
+
+/** Invitation repo stub: no nickname configured unless overridden. */
+function makeInvitationRepo(
+  notifyTelegram: string | null = null,
+): WorkerInvitationRepo {
+  return { findById: async () => ({ notifyTelegram }) };
+}
+
+/** Telegram-contact repo stub backed by a username → chatId map. */
+function makeContactRepo(
+  contacts: Record<string, string> = {},
+): WorkerTelegramContactRepo {
+  return {
+    findByUsername: async (username) =>
+      contacts[username] ? { chatId: contacts[username] } : null,
+  };
 }
 
 /** Telegram fake whose `sendMessage` behaviour is programmable per call. */
@@ -102,6 +121,8 @@ function makeWorker(rows: NotificationOutbox[], authors: Author[], telegram: Tel
   const worker = new OutboxWorker({
     outboxRepo,
     authorRepo: makeAuthorRepo(authors),
+    invitationRepo: makeInvitationRepo(),
+    telegramContactRepo: makeContactRepo(),
     telegram,
     policy: POLICY,
   });
@@ -186,6 +207,8 @@ describe('OutboxWorker.processPending — author without telegramChatId', () => 
     const worker = new OutboxWorker({
       outboxRepo,
       authorRepo: { findById: async () => author({ telegramChatId: chatId }) },
+      invitationRepo: makeInvitationRepo(),
+      telegramContactRepo: makeContactRepo(),
       telegram: client,
       policy: POLICY,
     });
@@ -199,5 +222,69 @@ describe('OutboxWorker.processPending — author without telegramChatId', () => 
     await worker.processPending();
     expect(store.get('n1')!.status).toBe('SENT');
     expect(sent).toEqual([{ chatId: '999', text: 'Приглашение открыли: Аиша.' }]);
+  });
+});
+
+describe("OutboxWorker.processPending — invitation's notifyTelegram nickname", () => {
+  it('delivers to the chat mapped from the invitation nickname (not the author)', async () => {
+    const { client, sent } = makeTelegram(() => {});
+    const { repo: outboxRepo, store } = makeOutboxRepo([outboxRow()]);
+    const worker = new OutboxWorker({
+      outboxRepo,
+      // Author has their own linked chat, but the nickname takes priority.
+      authorRepo: makeAuthorRepo([author({ telegramChatId: '555' })]),
+      invitationRepo: makeInvitationRepo('alice'),
+      telegramContactRepo: makeContactRepo({ alice: '777' }),
+      telegram: client,
+      policy: POLICY,
+    });
+
+    const result = await worker.processPending();
+
+    expect(result.sent).toBe(1);
+    expect(sent).toEqual([{ chatId: '777', text: 'Приглашение открыли: Аиша.' }]);
+    expect(store.get('n1')!.status).toBe('SENT');
+  });
+
+  it('falls back to the author chat when the nickname is not yet mapped', async () => {
+    const { client, sent } = makeTelegram(() => {});
+    const { worker, store } = (() => {
+      const { repo: outboxRepo, store } = makeOutboxRepo([outboxRow()]);
+      const worker = new OutboxWorker({
+        outboxRepo,
+        authorRepo: makeAuthorRepo([author({ telegramChatId: '555' })]),
+        // Nickname set, but the person hasn't messaged the bot yet (no contact).
+        invitationRepo: makeInvitationRepo('ghost'),
+        telegramContactRepo: makeContactRepo({}),
+        telegram: client,
+        policy: POLICY,
+      });
+      return { worker, store };
+    })();
+
+    const result = await worker.processPending();
+
+    expect(result.sent).toBe(1);
+    expect(sent).toEqual([{ chatId: '555', text: 'Приглашение открыли: Аиша.' }]);
+    expect(store.get('n1')!.status).toBe('SENT');
+  });
+
+  it('skips (stays PENDING) when neither nickname nor author chat resolves', async () => {
+    const { client, sent } = makeTelegram(() => {});
+    const { repo: outboxRepo, store } = makeOutboxRepo([outboxRow()]);
+    const worker = new OutboxWorker({
+      outboxRepo,
+      authorRepo: makeAuthorRepo([author({ telegramChatId: null })]),
+      invitationRepo: makeInvitationRepo('ghost'),
+      telegramContactRepo: makeContactRepo({}),
+      telegram: client,
+      policy: POLICY,
+    });
+
+    const result = await worker.processPending();
+
+    expect(result.skipped).toBe(1);
+    expect(sent).toHaveLength(0);
+    expect(store.get('n1')!.status).toBe('PENDING');
   });
 });

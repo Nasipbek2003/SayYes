@@ -11,3 +11,4 @@ export * as paymentRepo from './payments';
 export * as outboxRepo from './notificationOutbox';
 export * as authorRepo from './authors';
 export * as magicLinkRepo from './magicLinks';
+export * as telegramContactRepo from './telegramContacts';

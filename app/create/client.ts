@@ -65,7 +65,13 @@ export interface DraftInvitation {
 
 /** Create a draft invitation for the chosen template/theme (Requirement 2.6). */
 export async function createDraft(
-  input: { templateId: string; themeId: string; data?: Record<string, unknown> },
+  input: {
+    templateId: string;
+    themeId: string;
+    data?: Record<string, unknown>;
+    /** Telegram nickname to notify on a guest response (optional). */
+    notifyTelegram?: string;
+  },
   fetchImpl: typeof fetch = fetch,
 ): Promise<DraftInvitation> {
   const res = await fetchImpl('/api/invitations', {
@@ -79,7 +85,12 @@ export async function createDraft(
 /** Auto-save: merge data and/or switch theme on an existing draft (Req 2.6). */
 export async function updateDraft(
   id: string,
-  patch: { data?: Record<string, unknown>; themeId?: string },
+  patch: {
+    data?: Record<string, unknown>;
+    themeId?: string;
+    /** Telegram nickname to notify on a guest response (optional). */
+    notifyTelegram?: string | null;
+  },
   fetchImpl: typeof fetch = fetch,
 ): Promise<DraftInvitation> {
   const res = await fetchImpl(`/api/invitations/${encodeURIComponent(id)}`, {

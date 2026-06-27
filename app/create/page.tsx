@@ -19,6 +19,7 @@ import Link from 'next/link';
 
 import { getCurrentAuthorId } from '@/lib/auth/nextCookies';
 import { templateRegistry, TemplateNotFoundError } from '@/lib/templates/registry';
+import { env } from '@/lib/env';
 
 import { CreateForm } from './CreateForm';
 
@@ -69,6 +70,7 @@ export default async function CreatePage({
         }}
         themeId={resolvedTheme}
         isAuthed={!!authorId}
+        botUsername={env.telegram.botUsername}
       />
     </main>
   );

@@ -82,6 +82,7 @@ describe('POST /api/invitations', () => {
       'simple-date',
       'romantic',
       { x: 1 },
+      null,
     );
   });
 

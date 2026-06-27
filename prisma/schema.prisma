@@ -30,22 +30,36 @@ model MagicLinkToken {
 }
 
 model Invitation {
-  id          String           @id @default(cuid())
-  authorId    String
-  templateId  String
-  themeId     String
-  tier        Tier             @default(BASIC)
-  status      InvitationStatus @default(DRAFT)
-  data        Json
-  token       String?          @unique
-  expiresAt   DateTime?
-  oneTimeView Boolean          @default(false)
-  createdAt   DateTime         @default(now())
-  activatedAt DateTime?
-  author      Author           @relation(fields: [authorId], references: [id])
-  opens       OpenEvent[]
-  payment     Payment?
-  responses   Response[]
+  id             String           @id @default(cuid())
+  authorId       String
+  templateId     String
+  themeId        String
+  tier           Tier             @default(BASIC)
+  status         InvitationStatus @default(DRAFT)
+  data           Json
+  token          String?          @unique
+  expiresAt      DateTime?
+  oneTimeView    Boolean          @default(false)
+  /** Telegram @username (normalised, без @) куда слать ответы гостей. */
+  notifyTelegram String?
+  createdAt      DateTime         @default(now())
+  activatedAt    DateTime?
+  author         Author           @relation(fields: [authorId], references: [id])
+  opens          OpenEvent[]
+  payment        Payment?
+  responses      Response[]
+}
+
+/**
+ * Соответствие Telegram @username → chat.id, накапливается вебхуком при любом
+ * сообщении боту. Нужно, потому что Bot API не умеет писать пользователю по
+ * @username — только по числовому chat.id, который мы узнаём, когда человек
+ * хотя бы раз написал боту (нажал Start).
+ */
+model TelegramContact {
+  username  String   @id
+  chatId    String
+  updatedAt DateTime @updatedAt
 }
 
 model OpenEvent {

@@ -51,6 +51,7 @@ import type { TierFeatures } from '@/lib/services/tier';
 import { summariseRsvp } from '@/lib/services/rsvpSummary';
 import type { RsvpSummary } from '@/lib/services/rsvpSummary';
 import { notificationService } from '@/lib/services/notification';
+import { normalizeTelegramUsername } from '@/lib/notifications/telegramUsername';
 import type {
   Invitation,
   InvitationStatus,
@@ -268,6 +269,12 @@ export interface UpdateDraftPatch {
   data?: AuthorData;
   /** Optionally switch the colour theme (validated against the template). */
   themeId?: string;
+  /**
+   * Telegram nickname (any of `@user`, `user`, or a `t.me/user` link) to notify
+   * when a guest responds. Normalised before storage; an invalid/empty value
+   * clears the field. Pass `undefined` to leave it unchanged.
+   */
+  notifyTelegram?: string | null;
 }
 
 /**
@@ -658,6 +665,7 @@ export class InvitationService {
     templateId: string,
     themeId: string,
     data: AuthorData = {},
+    notifyTelegram?: string | null,
   ): Promise<Invitation> {
     const template = this.getTemplateOr404(templateId);
     this.assertThemeValid(template, themeId);
@@ -668,6 +676,7 @@ export class InvitationService {
       themeId,
       status: 'DRAFT',
       data: (data ?? {}) as Prisma.InputJsonValue,
+      notifyTelegram: normalizeTelegramUsername(notifyTelegram),
     });
   }
 
@@ -721,6 +730,11 @@ export class InvitationService {
         ...patch.data,
       };
       update.data = merged as Prisma.InputJsonValue;
+    }
+
+    if (patch.notifyTelegram !== undefined) {
+      // Normalise to the canonical username, or clear it for an empty/invalid value.
+      update.notifyTelegram = normalizeTelegramUsername(patch.notifyTelegram);
     }
 
     if (Object.keys(update).length === 0) {

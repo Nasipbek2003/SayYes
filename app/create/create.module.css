@@ -1054,3 +1054,33 @@
     padding: 0 16px;
   }
 }
+
+/* ─── Telegram-уведомления: блок «открыть бота» под полем ника ─── */
+.tgConnect {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 1px solid #F0D7E2;
+  border-radius: 16px;
+  background: #FCF3F7;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tgConnectText {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #7A5A68;
+}
+
+.tgConnect .btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 15px;
+  text-decoration: none;
+  align-self: flex-start;
+}

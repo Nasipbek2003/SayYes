@@ -34,6 +34,8 @@ import {
   ResponseValidationError,
   invitationService,
 } from '@/lib/services/invitation';
+import { outboxWorker } from '@/lib/notifications/outboxWorker';
+import { logger } from '@/lib/logger';
 import type { GuestResponse } from '@/templates/types';
 
 export const runtime = 'nodejs';
@@ -73,6 +75,21 @@ export async function POST(
       token,
       body as GuestResponse,
     );
+
+    // Best-effort: deliver the just-enqueued author notification immediately so
+    // it doesn't wait for the next cron run. Delivery failures must never fail
+    // the guest's response — the row stays PENDING and the cron retries it.
+    try {
+      await outboxWorker.processPending();
+    } catch (deliveryError) {
+      logger.warn('outbox-delivery-after-respond-failed', {
+        error:
+          deliveryError instanceof Error
+            ? deliveryError.message
+            : String(deliveryError),
+      });
+    }
+
     return Response.json({ ok: true, updated }, { status: 200 });
   } catch (error) {
     if (error instanceof ResponseValidationError) {

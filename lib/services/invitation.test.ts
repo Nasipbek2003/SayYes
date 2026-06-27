@@ -48,6 +48,7 @@ function makeFakeRepo(seed: Invitation[] = []) {
         token: null,
         expiresAt: input.expiresAt ?? null,
         oneTimeView: input.oneTimeView ?? false,
+        notifyTelegram: input.notifyTelegram ?? null,
         createdAt: now,
         activatedAt: null,
       };
@@ -63,6 +64,9 @@ function makeFakeRepo(seed: Invitation[] = []) {
         ...(data.themeId !== undefined ? { themeId: data.themeId as string } : {}),
         ...(data.data !== undefined
           ? { data: data.data as Invitation['data'] }
+          : {}),
+        ...(data.notifyTelegram !== undefined
+          ? { notifyTelegram: data.notifyTelegram as string | null }
           : {}),
       };
       store.set(id, updated);

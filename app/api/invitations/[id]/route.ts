@@ -31,6 +31,7 @@ interface PatchBody {
   validate?: unknown;
   data?: unknown;
   themeId?: unknown;
+  notifyTelegram?: unknown;
 }
 
 export async function PATCH(
@@ -73,11 +74,22 @@ export async function PATCH(
   ) {
     return Response.json({ error: '`data` must be an object.' }, { status: 400 });
   }
+  if (
+    body?.notifyTelegram !== undefined &&
+    body.notifyTelegram !== null &&
+    typeof body.notifyTelegram !== 'string'
+  ) {
+    return Response.json(
+      { error: '`notifyTelegram` must be a string or null.' },
+      { status: 400 },
+    );
+  }
 
   try {
     const invitation = await invitationService.updateDraft(id, authorId, {
       data: body.data as Record<string, unknown> | undefined,
       themeId: body.themeId as string | undefined,
+      notifyTelegram: body.notifyTelegram as string | null | undefined,
     });
     return Response.json(invitation, { status: 200 });
   } catch (error) {

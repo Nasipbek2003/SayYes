@@ -12,9 +12,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { issueLinkCode } from '@/lib/notifications/telegramLink';
 
 const setTelegramChatId = vi.fn();
+const upsertContact = vi.fn();
+const sendMessage = vi.fn();
 
 vi.mock('@/lib/repositories', () => ({
   authorRepo: { setTelegramChatId: (...args: unknown[]) => setTelegramChatId(...args) },
+  telegramContactRepo: { upsert: (...args: unknown[]) => upsertContact(...args) },
+}));
+
+vi.mock('@/lib/notifications/telegram', () => ({
+  getTelegramClient: () => ({ sendMessage: (...args: unknown[]) => sendMessage(...args) }),
 }));
 
 const { POST } = await import('./route');
@@ -33,6 +40,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   process.env.SESSION_SECRET = SECRET;
   setTelegramChatId.mockResolvedValue({});
+  upsertContact.mockResolvedValue({});
+  sendMessage.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -56,6 +65,32 @@ describe('POST /api/telegram/webhook', () => {
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ ok: true, linked: false });
     expect(setTelegramChatId).not.toHaveBeenCalled();
+  });
+
+  it('captures the sender @username → chat.id on any message', async () => {
+    const res = await POST(
+      req({ message: { text: 'hi', from: { username: 'Alice' }, chat: { id: 4242 } } }),
+    );
+    expect(res.status).toBe(200);
+    // Username is normalised (lowercased) before storage.
+    expect(upsertContact).toHaveBeenCalledWith('alice', '4242');
+  });
+
+  it('replies with a confirmation on /start when the contact is captured', async () => {
+    upsertContact.mockResolvedValue({});
+    const res = await POST(
+      req({ message: { text: '/start', from: { username: 'Alice' }, chat: { id: 4242 } } }),
+    );
+    expect(res.status).toBe(200);
+    expect(sendMessage).toHaveBeenCalledTimes(1);
+    const arg = sendMessage.mock.calls[0][0] as { chatId: string; text: string };
+    expect(arg.chatId).toBe('4242');
+    expect(arg.text).toContain('@Alice');
+  });
+
+  it('does not reply to a non-/start message', async () => {
+    await POST(req({ message: { text: 'просто привет', from: { username: 'Bob' }, chat: { id: 7 } } }));
+    expect(sendMessage).not.toHaveBeenCalled();
   });
 
   it('rejects an update with a wrong secret token (401)', async () => {

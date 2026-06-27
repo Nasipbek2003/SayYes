@@ -56,6 +56,7 @@ function makeInvitation(overrides: Partial<Invitation> = {}): Invitation {
     oneTimeView: false,
     createdAt: new Date(),
     activatedAt: null,
+    notifyTelegram: null,
     ...overrides,
   };
 }

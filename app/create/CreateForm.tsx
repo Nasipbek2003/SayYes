@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, Eye, Mail, Pencil } from 'lucide-react';
+import { Check, Eye, Mail, Pencil, Send } from 'lucide-react';
 
 import type { PreviewPayload, PreviewPlace } from '@/lib/services/invitation';
 import type { TemplateField, TemplateSchema } from '@/templates/types';
@@ -49,6 +49,8 @@ export interface CreateFormProps {
   template: CreateFormTemplate;
   themeId: string;
   isAuthed?: boolean;
+  /** Telegram bot username (without @) for the "open the bot" link. */
+  botUsername?: string;
 }
 
 /** Готовые стикеры-картинки (лежат в /public) — для любого image-поля. */
@@ -58,7 +60,7 @@ const STEP_LABELS_START = 'Начало';
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 type MobileView = 'edit' | 'preview';
 
-export function CreateForm({ template, themeId, isAuthed = false }: CreateFormProps) {
+export function CreateForm({ template, themeId, isAuthed = false, botUsername }: CreateFormProps) {
   const router = useRouter();
 
   const [step, setStep] = useState(1);
@@ -69,6 +71,8 @@ export function CreateForm({ template, themeId, isAuthed = false }: CreateFormPr
   const [activating, setActivating] = useState(false);
   const [mobileView, setMobileView] = useState<MobileView>('edit');
   const [activeScreenId, setActiveScreenId] = useState<string>(template.startScreen);
+  /** Telegram-ник автора — туда придёт уведомление, когда гость ответит. */
+  const [notifyTelegram, setNotifyTelegram] = useState('');
   /** Поля, которые автор уже редактировал — ошибки показываем только для них. */
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
@@ -79,6 +83,10 @@ export function CreateForm({ template, themeId, isAuthed = false }: CreateFormPr
 
   const invitationIdRef = useRef<string | null>(null);
   invitationIdRef.current = invitationId;
+
+  /** Latest Telegram nickname, so debounced auto-save reads the current value. */
+  const notifyTelegramRef = useRef<string>('');
+  notifyTelegramRef.current = notifyTelegram;
 
   /** Field key → the screen it affects, so the preview follows the editor. */
   const fieldScreenMap = useMemo(
@@ -173,7 +181,12 @@ export function CreateForm({ template, themeId, isAuthed = false }: CreateFormPr
   const ensureDraft = useCallback(async (currentData: FormData): Promise<string | null> => {
     if (invitationIdRef.current) return invitationIdRef.current;
     try {
-      const draft = await createDraft({ templateId: template.id, themeId, data: toPersistedData(currentData) });
+      const draft = await createDraft({
+        templateId: template.id,
+        themeId,
+        data: toPersistedData(currentData),
+        notifyTelegram: notifyTelegramRef.current || undefined,
+      });
       invitationIdRef.current = draft.id;
       setInvitationId(draft.id);
       return draft.id;
@@ -189,7 +202,11 @@ export function CreateForm({ template, themeId, isAuthed = false }: CreateFormPr
     const id = await ensureDraft(currentData);
     if (!id) { setSaveState('error'); return; }
     try {
-      await updateDraft(id, { data: toPersistedData(currentData), themeId });
+      await updateDraft(id, {
+        data: toPersistedData(currentData),
+        themeId,
+        notifyTelegram: notifyTelegramRef.current,
+      });
       setSaveState('saved');
     } catch (err) {
       if (err instanceof UnauthorizedError) { handleAuthError(); return; }
@@ -219,8 +236,15 @@ export function CreateForm({ template, themeId, isAuthed = false }: CreateFormPr
     if (isAuthed) setSaveState('saving');
   };
 
-  const onUploadImage = async (key: string, file: File) => {
-    const id = await ensureDraft(data);
+  const onChangeTelegram = (value: string) => {
+    setNotifyTelegram(value);
+    if (isAuthed && invitationIdRef.current) {
+      debouncerRef.current?.schedule(data);
+      setSaveState('saving');
+    }
+  };
+
+  const onUploadImage = async (key: string, file: File) => {    const id = await ensureDraft(data);
     if (!id) return;
     try {
       const { url } = await uploadPhoto(id, file);
@@ -244,7 +268,11 @@ export function CreateForm({ template, themeId, isAuthed = false }: CreateFormPr
     const id = await ensureDraft(data);
     if (!id) { setActivating(false); return; }
     try {
-      await updateDraft(id, { data: toPersistedData(data), themeId });
+      await updateDraft(id, {
+        data: toPersistedData(data),
+        themeId,
+        notifyTelegram,
+      });
       const { url } = await devActivate(id);
       window.location.href = url;
     } catch (err) {
@@ -354,6 +382,44 @@ export function CreateForm({ template, themeId, isAuthed = false }: CreateFormPr
 
                 {saveState !== 'idle' && <p className={styles.saveStatus}>{saveLabel[saveState]}</p>}
                 {error && <p className={`${styles.notice} ${styles.noticeError}`}>{error}</p>}
+
+                {isLastGroup && (
+                  <div className={styles.field}>
+                    <label className={styles.label}>
+                      Твой Telegram для ответов
+                      <span className={styles.optional}> (необяз.)</span>
+                    </label>
+                    <input
+                      type="text"
+                      className={styles.input}
+                      value={notifyTelegram}
+                      placeholder="@username"
+                      autoComplete="off"
+                      inputMode="text"
+                      onChange={(e) => onChangeTelegram(e.target.value)}
+                    />
+                    <span className={styles.fileHint}>
+                      Когда кто-то ответит на приглашение, пришлём уведомление в Telegram.
+                    </span>
+                    {botUsername && notifyTelegram.trim() !== '' && (
+                      <div className={styles.tgConnect}>
+                        <p className={styles.tgConnectText}>
+                          Чтобы уведомление дошло, открой нашего бота и нажми{' '}
+                          <strong>Start</strong> — иначе Telegram не разрешит ему
+                          тебе написать. Это нужно сделать один раз.
+                        </p>
+                        <a
+                          className={styles.btnSecondary}
+                          href={`https://t.me/${botUsername}?start=notify`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Send size={16} /> Открыть бота @{botUsername}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className={styles.stepActions}>
                   <button className={styles.btnBack} onClick={() => setStep(step - 1)}>← Назад</button>

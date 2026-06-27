@@ -109,6 +109,7 @@ function makeStores() {
         token: null,
         expiresAt: input.expiresAt ?? null,
         oneTimeView: input.oneTimeView ?? false,
+        notifyTelegram: input.notifyTelegram ?? null,
         createdAt: now,
         activatedAt: null,
       };

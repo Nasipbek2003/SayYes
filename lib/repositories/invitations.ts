@@ -18,6 +18,8 @@ export interface CreateInvitationInput {
   data: Prisma.InputJsonValue;
   expiresAt?: Date | null;
   oneTimeView?: boolean;
+  /** Telegram @username (normalised) to notify on a guest response. */
+  notifyTelegram?: string | null;
 }
 
 /** Create a new invitation (typically a DRAFT). */

@@ -16,13 +16,41 @@
  * secret (401) or unparseable body (400) is rejected.
  */
 import { env } from '@/lib/env';
-import { authorRepo } from '@/lib/repositories';
+import { authorRepo, telegramContactRepo } from '@/lib/repositories';
 import {
+  captureTelegramContact,
   linkTelegramFromUpdate,
   type TelegramUpdate,
 } from '@/lib/notifications/telegramLink';
+import { getTelegramClient } from '@/lib/notifications/telegram';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
+
+/** Friendly reply so the user sees the bot reacted to /start. */
+async function replyToStart(
+  update: TelegramUpdate,
+  captured: string | null,
+): Promise<void> {
+  const text = update.message?.text ?? '';
+  if (!/^\/start(?:@\w+)?\b/.test(text.trim())) return;
+
+  const chatId = update.message?.chat?.id;
+  if (chatId == null || chatId === '') return;
+
+  const username = update.message?.from?.username;
+  const greeting = captured
+    ? `Готово! Я запомнил тебя (@${username}). Теперь, когда кто-то ответит на твоё приглашение, я пришлю уведомление сюда. 💌`
+    : 'Привет! Чтобы получать уведомления об ответах на приглашения, у твоего аккаунта должен быть публичный @username (Настройки → Имя пользователя). Добавь его и нажми /start ещё раз.';
+
+  try {
+    await getTelegramClient().sendMessage({ chatId: String(chatId), text: greeting });
+  } catch (error) {
+    logger.warn('telegram-start-reply-failed', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
 
 export async function POST(request: Request): Promise<Response> {
   // 1) Verify the Telegram secret token, when configured.
@@ -42,10 +70,19 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  // 3) Link the chat to the author when this is a valid /start <code> command.
+  // 3) Remember the sender's @username → chat.id so invitations that name this
+  //    nickname (notifyTelegram) can be delivered later. Best-effort.
+  const capturedUsername = await captureTelegramContact(update, {
+    upsert: telegramContactRepo.upsert,
+  });
+
+  // 4) Link the chat to the author when this is a valid /start <code> command.
   const result = await linkTelegramFromUpdate(update, {
     setTelegramChatId: authorRepo.setTelegramChatId,
   });
+
+  // 5) Acknowledge a /start so the user gets visible confirmation.
+  await replyToStart(update, capturedUsername);
 
   return Response.json({ ok: true, linked: result.ok }, { status: 200 });
 }

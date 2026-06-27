@@ -183,6 +183,8 @@ describe('accumulated PENDING events deliver after linking (Requirement 9.5)', (
         markFailed: async () => row as never,
       },
       authorRepo: { findById: async (id) => (authorStore.get(id) as never) ?? null },
+      invitationRepo: { findById: async () => ({ notifyTelegram: null }) },
+      telegramContactRepo: { findByUsername: async () => null },
       telegram: {
         sendMessage: async (m) => {
           sent.push(m);

@@ -24,6 +24,8 @@ import {
   InvitationUnavailableError,
   invitationService,
 } from '@/lib/services/invitation';
+import { outboxWorker } from '@/lib/notifications/outboxWorker';
+import { logger } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 
@@ -46,6 +48,21 @@ export async function POST(
 
   try {
     const { firstOpen } = await invitationService.recordOpen(token, userAgent);
+
+    // Best-effort immediate delivery of the just-enqueued notification (only
+    // the first open enqueues one). Never fail the public request on a delivery
+    // error — the row stays PENDING and the cron retries it.
+    try {
+      await outboxWorker.processPending();
+    } catch (deliveryError) {
+      logger.warn('outbox-delivery-after-open-failed', {
+        error:
+          deliveryError instanceof Error
+            ? deliveryError.message
+            : String(deliveryError),
+      });
+    }
+
     return Response.json({ ok: true, firstOpen }, { status: 200 });
   } catch (error) {
     if (error instanceof InvitationUnavailableError) {

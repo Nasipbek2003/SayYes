@@ -29,6 +29,19 @@ vi.mock('@/lib/services/invitation', async () => {
   };
 });
 
+vi.mock('@/lib/notifications/outboxWorker', () => ({
+  outboxWorker: {
+    processPending: vi.fn().mockResolvedValue({
+      processed: 0,
+      sent: 0,
+      skipped: 0,
+      retried: 0,
+      failed: 0,
+      outcomes: [],
+    }),
+  },
+}));
+
 const { POST } = await import('./route');
 
 function openReq(ua = 'jest-UA'): Request {

@@ -26,6 +26,7 @@
 import { SignJWT, jwtVerify } from 'jose';
 
 import { env } from '@/lib/env';
+import { normalizeTelegramUsername } from '@/lib/notifications/telegramUsername';
 
 /** Link-code lifetime: 15 minutes (seconds). */
 export const TELEGRAM_LINK_TTL_SECONDS = 60 * 15;
@@ -122,6 +123,7 @@ export function parseStartCommand(text: string | undefined | null): string | nul
 export interface TelegramUpdate {
   message?: {
     text?: string;
+    from?: { username?: string };
     chat?: { id?: number | string };
   };
 }
@@ -162,4 +164,33 @@ export async function linkTelegramFromUpdate(
   const chatId = String(rawChatId);
   await repo.setTelegramChatId(authorId, chatId);
   return { ok: true, authorId, chatId };
+}
+
+/** Contact repo surface needed to capture a username → chat id mapping. */
+export interface ContactRepo {
+  upsert: (username: string, chatId: string) => Promise<unknown>;
+}
+
+/**
+ * Capture the sender's `@username → chat.id` mapping from any incoming message.
+ *
+ * The Bot API cannot message a user by `@username`, only by numeric `chat.id`,
+ * which we only learn once that user writes to the bot. So on every update we
+ * remember the mapping; later, an invitation whose `notifyTelegram` names this
+ * username can be delivered (see the outbox worker). Best-effort: returns the
+ * normalised username on success, or `null` when the update carries no usable
+ * username/chat.
+ */
+export async function captureTelegramContact(
+  update: TelegramUpdate,
+  repo: ContactRepo,
+): Promise<string | null> {
+  const username = normalizeTelegramUsername(update.message?.from?.username);
+  if (!username) return null;
+
+  const rawChatId = update.message?.chat?.id;
+  if (rawChatId == null || rawChatId === '') return null;
+
+  await repo.upsert(username, String(rawChatId));
+  return username;
 }

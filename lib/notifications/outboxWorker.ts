@@ -22,7 +22,12 @@
  */
 import type { Author, NotificationOutbox } from '@prisma/client';
 
-import { authorRepo as defaultAuthorRepo, outboxRepo as defaultOutboxRepo } from '@/lib/repositories';
+import {
+  authorRepo as defaultAuthorRepo,
+  invitationRepo as defaultInvitationRepo,
+  outboxRepo as defaultOutboxRepo,
+  telegramContactRepo as defaultTelegramContactRepo,
+} from '@/lib/repositories';
 import {
   DEFAULT_RETRY_POLICY,
   hasExhaustedRetries,
@@ -43,10 +48,22 @@ export interface WorkerAuthorRepo {
   findById: (id: string) => Promise<Author | null>;
 }
 
+/** Invitation repository surface the worker depends on (subset). */
+export interface WorkerInvitationRepo {
+  findById: (id: string) => Promise<{ notifyTelegram: string | null } | null>;
+}
+
+/** Telegram-contact repository surface the worker depends on (subset). */
+export interface WorkerTelegramContactRepo {
+  findByUsername: (username: string) => Promise<{ chatId: string } | null>;
+}
+
 /** Injectable dependencies (explicit so the worker is unit-testable). */
 export interface OutboxWorkerDeps {
   outboxRepo: WorkerOutboxRepo;
   authorRepo: WorkerAuthorRepo;
+  invitationRepo: WorkerInvitationRepo;
+  telegramContactRepo: WorkerTelegramContactRepo;
   telegram: TelegramClient;
   policy?: RetryPolicy;
 }
@@ -86,12 +103,16 @@ function messageOf(row: NotificationOutbox): string {
 export class OutboxWorker {
   private readonly outboxRepo: WorkerOutboxRepo;
   private readonly authorRepo: WorkerAuthorRepo;
+  private readonly invitationRepo: WorkerInvitationRepo;
+  private readonly telegramContactRepo: WorkerTelegramContactRepo;
   private readonly telegram: TelegramClient;
   private readonly policy: RetryPolicy;
 
   constructor(deps: OutboxWorkerDeps) {
     this.outboxRepo = deps.outboxRepo;
     this.authorRepo = deps.authorRepo;
+    this.invitationRepo = deps.invitationRepo;
+    this.telegramContactRepo = deps.telegramContactRepo;
     this.telegram = deps.telegram;
     this.policy = deps.policy ?? DEFAULT_RETRY_POLICY;
   }
@@ -122,17 +143,19 @@ export class OutboxWorker {
 
   /** Deliver a single row, returning the outcome (and mutating its DB state). */
   private async deliver(row: NotificationOutbox): Promise<DeliveryOutcome> {
-    const author = await this.authorRepo.findById(row.authorId);
+    const chatId = await this.resolveChatId(row);
 
-    // Requirement 9.5: author hasn't linked Telegram yet — keep the event
-    // PENDING and skip it; it'll be delivered after linking (task 9.3).
-    if (!author?.telegramChatId) {
+    // Requirement 9.5: no deliverable Telegram chat yet — either the author
+    // hasn't linked Telegram and the invitation names no (known) nickname, or
+    // the named person hasn't messaged the bot. Keep the event PENDING and skip
+    // it; it'll be delivered once a chat becomes resolvable.
+    if (!chatId) {
       return { id: row.id, result: 'skipped', reason: 'no-telegram' };
     }
 
     try {
       await this.telegram.sendMessage({
-        chatId: author.telegramChatId,
+        chatId,
         text: messageOf(row),
       });
       await this.outboxRepo.markSent(row.id);
@@ -152,11 +175,39 @@ export class OutboxWorker {
       return { id: row.id, result: 'retry', error };
     }
   }
+
+  /**
+   * Resolve the target Telegram chat id for an outbox row, or null when none is
+   * deliverable yet.
+   *
+   * Priority:
+   *  1. The invitation's `notifyTelegram` nickname — the creator just typed a
+   *     `@username`. We resolve it to a chat id via the contact mapping the
+   *     webhook captured (the named person must have messaged the bot at least
+   *     once, since the Bot API can't DM by `@username`).
+   *  2. Fallback to the author's own linked `telegramChatId` (the cabinet
+   *     linking flow), preserving the original behaviour.
+   */
+  private async resolveChatId(
+    row: NotificationOutbox,
+  ): Promise<string | null> {
+    const invitation = await this.invitationRepo.findById(row.invitationId);
+    const username = invitation?.notifyTelegram ?? null;
+    if (username) {
+      const contact = await this.telegramContactRepo.findByUsername(username);
+      if (contact?.chatId) return contact.chatId;
+    }
+
+    const author = await this.authorRepo.findById(row.authorId);
+    return author?.telegramChatId ?? null;
+  }
 }
 
 /** Default worker wired with the real repos and the Bot API Telegram client. */
 export const outboxWorker = new OutboxWorker({
   outboxRepo: defaultOutboxRepo,
   authorRepo: defaultAuthorRepo,
+  invitationRepo: defaultInvitationRepo,
+  telegramContactRepo: defaultTelegramContactRepo,
   telegram: getTelegramClient(),
 });
