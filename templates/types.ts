@@ -23,7 +23,16 @@ export type TemplateFieldType =
   | 'image'
   | 'placesList'
   | 'datetime'
-  | 'boolean';
+  | 'boolean'
+  | 'select';
+
+/** One option of a `select` field (dropdown choice). */
+export interface TemplateFieldOption {
+  /** Stored value written to author data. */
+  value: string;
+  /** Human-readable label shown in the dropdown. */
+  label: string;
+}
 
 /**
  * A single field the author fills in when creating an invitation. The set of
@@ -56,6 +65,12 @@ export interface TemplateField {
    * author can edit and that appears in the preview.
    */
   defaultValue?: string;
+  /**
+   * Choices for a `select` field. Required (and only meaningful) when
+   * {@link type} is `'select'`. The stored value must be one of these options'
+   * `value`s.
+   */
+  options?: TemplateFieldOption[];
 }
 
 /** Kinds of screens the scenario engine knows how to render. */

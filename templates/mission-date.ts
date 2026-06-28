@@ -13,6 +13,7 @@
  *   screen-3 (подтверждение) → screen-4 (финал: миссия принята)
  */
 import type { TemplateSchema } from './types';
+import { fNoBehavior } from './_dateFields';
 
 export const missionDate: TemplateSchema = {
   id: 'mission-date',
@@ -25,6 +26,7 @@ export const missionDate: TemplateSchema = {
     { key: 'screen1_title', label: 'Текст задания', type: 'longtext', required: true, maxLength: 300 },
     { key: 'btn_yes', label: 'Кнопка «Принять»', type: 'text', required: false, maxLength: 30 },
     { key: 'btn_no', label: 'Кнопка «Отклонить»', type: 'text', required: false, maxLength: 30 },
+    fNoBehavior,
     { key: 'screen2_image', label: 'Картинка подтверждения', type: 'image', required: false },
     { key: 'screen2_title', label: 'Заголовок подтверждения', type: 'longtext', required: false, maxLength: 300 },
     { key: 'screen2_subtitle', label: 'Подзаголовок', type: 'longtext', required: false, maxLength: 300 },

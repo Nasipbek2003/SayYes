@@ -6,6 +6,7 @@
 import Link from 'next/link';
 import { buildGallery } from '@/lib/gallery/gallery';
 import { HowItWorksDemo } from './components/HowItWorksDemo';
+import { TemplateGalleryCard } from './components/TemplateGalleryCard';
 import {
   BenefitIconLink,
   BenefitIconTarget,
@@ -139,28 +140,8 @@ export default function HomePage() {
             </div>
           ) : (
             <ul className={styles.grid}>
-              {templates.map((template) => (
-                <li key={template.id} className={styles.card}>
-                  <Link
-                    href={template.createHref}
-                    className={styles.preview}
-                    style={{ background: template.previewGradient }}
-                    aria-label={`Создать по шаблону «${template.name}»`}
-                  >
-                    <div className={styles.previewPhone}>
-                      <span className={styles.previewEmoji} aria-hidden="true">
-                        {template.previewEmoji}
-                      </span>
-                    </div>
-                  </Link>
-                  <div className={styles.cardBody}>
-                    <h3 className={styles.cardTitle}>{template.name}</h3>
-                    <p className={styles.cardDesc}>{template.description}</p>
-                    <Link href={template.createHref} className={styles.createButton}>
-                      Создать →
-                    </Link>
-                  </div>
-                </li>
+              {templates.map((template, index) => (
+                <TemplateGalleryCard key={template.id} template={template} index={index} />
               ))}
             </ul>
           )}

@@ -31,10 +31,10 @@ export const MIN_NO_SCALE = 0.45;
 export const NO_SHRINK_FACTOR = 0.82;
 
 /** Linear growth added to "Да" per attempt. */
-export const YES_GROWTH_STEP = 0.18;
+export const YES_GROWTH_STEP = 0.1;
 
 /** Upper bound on the "Да" growth factor. */
-export const MAX_YES_SCALE = 2;
+export const MAX_YES_SCALE = 1.4;
 
 /**
  * Events the component binds to trigger an escape. Both `pointerdown` and

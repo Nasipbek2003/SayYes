@@ -14,6 +14,7 @@
  *   имя_адресата (для OG-тизера) и подпись (для финала).
  */
 import type { TemplateSchema } from './types';
+import { fNoBehavior } from './_dateFields';
 
 export const dateAsk: TemplateSchema = {
   id: 'date-ask',
@@ -26,6 +27,7 @@ export const dateAsk: TemplateSchema = {
     { key: 'screen1_title', label: 'Заголовок экрана 1', type: 'longtext', required: true, maxLength: 300, defaultValue: 'Пойдёшь со мной на свидание?' },
     { key: 'btn_yes', label: 'Кнопка «Да»', type: 'text', required: false, maxLength: 30, defaultValue: 'Да' },
     { key: 'btn_no', label: 'Кнопка «Нет»', type: 'text', required: false, maxLength: 30, defaultValue: 'Нет' },
+    fNoBehavior,
     { key: 'screen2_image', label: 'Картинка экрана 2', type: 'image', required: false },
     { key: 'screen2_title', label: 'Заголовок экрана 2', type: 'longtext', required: false, maxLength: 300, defaultValue: 'Ура, я так рада! 🎉' },
     { key: 'screen2_subtitle', label: 'Подзаголовок экрана 2', type: 'longtext', required: false, maxLength: 300, defaultValue: 'Скоро напишу все детали нашей встречи 💛' },

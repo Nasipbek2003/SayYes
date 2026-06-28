@@ -32,6 +32,7 @@ import {
   uploadPhoto,
 } from './client';
 import { PreviewPane } from './PreviewPane';
+import { StickerMedia } from '@/app/components/StickerMedia';
 import styles from './create.module.css';
 
 export interface CreateFormTemplate {
@@ -54,8 +55,47 @@ export interface CreateFormProps {
   botUsername?: string;
 }
 
-/** Готовые стикеры-картинки (лежат в /public) — для любого image-поля. */
-const STICKERS = ['/1.webp', '/2.webp', '/3.webp', '/4.webp', '/5.webp', '/6.webp', '/7.webp', '/8.webp'];
+/**
+ * Готовые стикеры-анимации, разложенные по категориям (папки в /public).
+ * Автор сначала выбирает тип (Мишка / Котик), затем — конкретную картинку.
+ * Имена файлов кодируются (пробелы и т.п.), чтобы корректно отдаваться статикой.
+ */
+interface StickerCategory {
+  id: string;
+  label: string;
+  /** Готовые URL-стикеры этой категории (уже закодированные). */
+  items: string[];
+}
+
+const sticker = (folder: string, file: string) => `/${folder}/${encodeURIComponent(file)}`;
+
+const STICKER_CATEGORIES: StickerCategory[] = [
+  {
+    id: 'bear',
+    label: '🐻 Мишка',
+    items: [
+      sticker('Bear', '7.webp'),
+      sticker('Bear', '3c0bf60694a743f86df373b718278d4e_720w.webm'),
+    ],
+  },
+  {
+    id: 'cat',
+    label: '🐱 Котик',
+    items: [
+      sticker('Cat', '1.webp'),
+      sticker('Cat', '2.webp'),
+      sticker('Cat', '4.webp'),
+      sticker('Cat', '5.webp'),
+      sticker('Cat', '6.webp'),
+      sticker('Cat', '8.webp'),
+      sticker('Cat', 'From Klickpin.com- Online Store Ideas Ideas Youll Keep Coming Back To 43854-pin-id-729442470912046251.webm'),
+      sticker('Cat', 'From Klickpin.com- Wholesome Quick Pasta Recipes on a Budget-pin-id-1055883075130039083.webm'),
+      sticker('Cat', 'From Klickpin.com- Wholesome Quick Pasta Recipes on a Budget-pin-id-1069816086471659269.webm'),
+      sticker('Cat', 'From Klickpin.com- Wholesome Quick Pasta Recipes on a Budget-pin-id-1145251380223070419.webm'),
+      sticker('Cat', 'From Klickpin.com- Wholesome Quick Pasta Recipes on a Budget-pin-id-699535754629243597.webm'),
+    ],
+  },
+];
 
 const STEP_LABELS_START = 'Начало';
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
@@ -546,6 +586,28 @@ function FieldControl({
     );
   }
 
+  if (kind === 'select') {
+    const options = field.options ?? [];
+    const current = str || field.defaultValue || options[0]?.value || '';
+    return (
+      <div className={styles.field} onFocusCapture={onFocus}>
+        {label}
+        <div className={styles.selectWrap}>
+          <select
+            className={styles.select}
+            value={current}
+            onChange={(e) => onChange(e.target.value)}
+          >
+            {options.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
+        {error ? <span className={styles.error}>{error}</span> : null}
+      </div>
+    );
+  }
+
   if (kind === 'places') {
     return (
       <div className={styles.field} onFocusCapture={onFocus} onPointerDownCapture={onFocus}>
@@ -589,20 +651,42 @@ function FieldControl({
   );
 }
 
-/** Сетка готовых стикеров + загрузка своей картинки. */
+/** Сетка готовых стикеров с выбором категории + загрузка своей картинки. */
 function ImagePicker({ value, onPick, onUpload }: { value: string; onPick: (url: string) => void; onUpload: (file: File) => void }) {
+  // Стартовая вкладка — категория уже выбранного стикера (если он из каталога).
+  const initialCategory =
+    STICKER_CATEGORIES.find((c) => c.items.includes(value))?.id ?? STICKER_CATEGORIES[0].id;
+  const [activeCategory, setActiveCategory] = useState(initialCategory);
+
+  const current =
+    STICKER_CATEGORIES.find((c) => c.id === activeCategory) ?? STICKER_CATEGORIES[0];
+
   return (
     <div className={styles.imageBlock}>
+      <div className={styles.stickerTabs} role="tablist">
+        {STICKER_CATEGORIES.map((category) => (
+          <button
+            type="button"
+            key={category.id}
+            role="tab"
+            aria-selected={category.id === activeCategory}
+            className={`${styles.stickerTab} ${category.id === activeCategory ? styles.stickerTabActive : ''}`}
+            onClick={() => setActiveCategory(category.id)}
+          >
+            {category.label}
+          </button>
+        ))}
+      </div>
       <div className={styles.imageGrid}>
-        {STICKERS.map((src) => (
+        {current.items.map((src) => (
           <button
             type="button"
             key={src}
             className={`${styles.imageThumb} ${value === src ? styles.imageThumbActive : ''}`}
             onClick={() => onPick(src)}
-            aria-label={`Выбрать ${src}`}
+            aria-label={`Выбрать ${decodeURIComponent(src)}`}
           >
-            <img className={styles.imageThumbImg} src={src} alt="" />
+            <StickerMedia className={styles.imageThumbImg} src={src} />
           </button>
         ))}
       </div>

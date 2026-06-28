@@ -11,8 +11,8 @@
  * Their integration into concrete template screens is tasks 8.x; this barrel
  * lets `ScreenRenderer`/screen components import them from one place.
  */
-export { RunawayButton } from './RunawayButton';
-export type { RunawayButtonProps } from './RunawayButton';
+export { RunawayButton, resolveNoBehavior, NO_BEHAVIORS } from './RunawayButton';
+export type { RunawayButtonProps, NoBehavior } from './RunawayButton';
 export { Confetti } from './Confetti';
 export type { ConfettiProps } from './Confetti';
 export { FloatingHearts, buildHearts } from './FloatingHearts';

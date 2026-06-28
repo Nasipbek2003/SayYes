@@ -121,6 +121,28 @@ function validateField(field: TemplateField, value: unknown): ValidationError[] 
       }
       break;
     }
+    case 'select': {
+      if (typeof value !== 'string') {
+        errors.push({
+          field: field.key,
+          code: 'type',
+          message: `Field "${field.label}" must be a string.`,
+        });
+        break;
+      }
+      // When options are declared, the stored value must be one of them.
+      if (field.options && field.options.length > 0) {
+        const allowed = field.options.some((option) => option.value === value);
+        if (!allowed) {
+          errors.push({
+            field: field.key,
+            code: 'option',
+            message: `Field "${field.label}" must be one of the offered options.`,
+          });
+        }
+      }
+      break;
+    }
     case 'datetime': {
       // Accept Date instances or parseable ISO-ish strings/timestamps.
       const valid =

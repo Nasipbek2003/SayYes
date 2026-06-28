@@ -9,6 +9,7 @@
  * приглашения. Кнопка «Нет» — спец-поведение (RunawayButton) без перехода.
  */
 import type { TemplateSchema } from './types';
+import { fNoBehavior } from './_dateFields';
 
 export const simpleDate: TemplateSchema = {
   id: 'simple-date',
@@ -43,6 +44,7 @@ export const simpleDate: TemplateSchema = {
       required: true,
       maxLength: 60,
     },
+    fNoBehavior,
   ],
   startScreen: 'intro',
   screens: [

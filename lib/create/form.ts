@@ -38,7 +38,8 @@ export type FieldInputKind =
   | 'image'
   | 'places'
   | 'datetime'
-  | 'checkbox';
+  | 'checkbox'
+  | 'select';
 
 /** One editable place in a `placesList` field (Requirement 2.4). */
 export interface PlaceDraft {
@@ -62,6 +63,8 @@ export function fieldInputKind(type: TemplateFieldType): FieldInputKind {
       return 'datetime';
     case 'boolean':
       return 'checkbox';
+    case 'select':
+      return 'select';
     default:
       return 'text';
   }
@@ -74,6 +77,9 @@ function defaultValueFor(field: TemplateField): unknown {
       return false;
     case 'placesList':
       return [] as PlaceDraft[];
+    case 'select':
+      // Prefer an explicit default, else the first declared option.
+      return field.defaultValue ?? field.options?.[0]?.value ?? '';
     default:
       // Prefer an explicit template default (e.g. button labels «Да»/«Нет»).
       return field.defaultValue ?? '';

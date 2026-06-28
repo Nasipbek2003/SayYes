@@ -1,4 +1,4 @@
-/**
+ /**
  * Шаблон «Секретное письмо» (secret-letter).
  *
  * Романтичный сценарий с анимацией конверта: запечатанный конверт → письмо с
@@ -13,6 +13,7 @@
  *   screen-3 (подтверждение) → screen-4 (финал)
  */
 import type { TemplateSchema } from './types';
+import { fNoBehavior } from './_dateFields';
 
 export const secretLetter: TemplateSchema = {
   id: 'secret-letter',
@@ -25,6 +26,7 @@ export const secretLetter: TemplateSchema = {
     { key: 'screen1_title', label: 'Текст письма', type: 'longtext', required: true, maxLength: 300 },
     { key: 'btn_yes', label: 'Кнопка «Да»', type: 'text', required: false, maxLength: 30 },
     { key: 'btn_no', label: 'Кнопка «Нет»', type: 'text', required: false, maxLength: 30 },
+    fNoBehavior,
     { key: 'screen2_image', label: 'Картинка подтверждения', type: 'image', required: false },
     { key: 'screen2_title', label: 'Заголовок подтверждения', type: 'longtext', required: false, maxLength: 300 },
     { key: 'screen2_subtitle', label: 'Подзаголовок', type: 'longtext', required: false, maxLength: 300 },

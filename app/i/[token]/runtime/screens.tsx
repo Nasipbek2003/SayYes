@@ -17,13 +17,14 @@
  * changing the renderer or the engine.
  */
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 import type { ScreenElement, ScreenKind, ScreenSchema } from '@/templates/types';
 
 import { substitute } from './controller';
-import { Confetti, Countdown, FloatingHearts, RunawayButton } from './animations';
+import { Confetti, Countdown, FloatingHearts, RunawayButton, resolveNoBehavior } from './animations';
+import { StickerMedia } from '@/app/components/StickerMedia';
 import {
   buildRsvpPayload,
   buildSelectionPayload,
@@ -139,12 +140,10 @@ function Element({
       const src = substitute(element.src, vars);
       if (!src) return null;
       return (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <StickerMedia
           key={element.id ?? index}
           className="screen__image"
           src={src}
-          alt=""
         />
       );
     }
@@ -232,8 +231,7 @@ function SimpleDateIntro({ screen, vars, onAction }: ScreenProps): ReactNode {
       <FloatingHearts count={10} />
       <div className="t1-intro">
         {config.photo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="t1-intro__photo" src={config.photo} alt="" />
+          <StickerMedia className="t1-intro__photo" src={config.photo} />
         ) : (
           <motion.div
             className="t1-intro__heart"
@@ -280,6 +278,7 @@ function SimpleDateInvite({ screen, vars, onAction }: ScreenProps): ReactNode {
           yesLabel={config.yesLabel}
           noLabel={config.noLabel}
           attemptLimit={config.attemptLimit}
+          behavior={resolveNoBehavior(vars['кнопка_нет_поведение'])}
           onYes={() => onAction(config.yesAction)}
         />
       </div>
@@ -476,8 +475,7 @@ function StoryForkPlacePicker({
                   onClick={() => setSelected(place.name)}
                 >
                   {place.photo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img className="t2-place__photo" src={place.photo} alt="" />
+                    <StickerMedia className="t2-place__photo" src={place.photo} />
                   ) : null}
                   <span className="t2-place__name">{place.name}</span>
                   {place.description ? (
@@ -951,7 +949,782 @@ function RecipeIntro({ screen, vars, onAction }: ScreenProps): ReactNode {
   );
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Тематические компоненты многоэкранных шаблонов (ex-message, interrogation,
+   tinder-story, breaking-news, horoscope, boarding, time-machine).
+   Каждый шаблон получает фирменное интро + стилизованный «сюжетный» экран
+   (kind: fork) с собственной анимацией вместо обобщённого ElementList.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/** Плавный счётчик 0 → `to` (для гороскопа). requestAnimationFrame, ~1.6 с. */
+function CountUp({ to, duration = 1600 }: { to: number; duration?: number }): ReactNode {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / duration);
+      // easeOutCubic для приятного замедления у финала
+      const eased = 1 - Math.pow(1 - p, 3);
+      setValue(Math.round(eased * to));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [to, duration]);
+  return <>{value}</>;
+}
+
+/* ── Секретное сообщение (ex-message) ─────────────────────────────────────── */
+
+/** ex-message — экран блокировки телефона с пуш-уведомлением. */
+function ExMessageLock({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const text = screen.elements.find((el) => el.kind === 'text');
+  const btn = screen.elements.find((el) => el.kind === 'button');
+  const action = btn?.action ?? 'click:next';
+  return (
+    <ScreenShell kind="intro" screenId={screen.id}>
+      <div className="xm-lock">
+        <motion.div
+          className="xm-notif"
+          initial={{ opacity: 0, y: -24, scale: 0.92 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+        >
+          <span className="xm-notif__app">💬 Сообщения · сейчас</span>
+          {heading ? <span className="xm-notif__title">{substitute(heading.text, vars)}</span> : null}
+          {text ? <span className="xm-notif__preview">{substitute(text.text, vars)}</span> : null}
+        </motion.div>
+        <motion.button
+          type="button"
+          className="screen__button xm-lock__btn"
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+          onClick={() => onAction(action)}
+        >
+          {substitute(btn?.text, vars) || 'Разблокировать 🔓'}
+        </motion.button>
+      </div>
+    </ScreenShell>
+  );
+}
+
+/** ex-message — пузырь чата с анимацией «печатает…» перед появлением текста. */
+function ExMessageChat({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const text = screen.elements.find((el) => el.kind === 'text');
+  const btn = screen.elements.find((el) => el.kind === 'button');
+  const action = btn?.action ?? 'click:next';
+  const [typing, setTyping] = useState(true);
+  useEffect(() => {
+    setTyping(true);
+    const t = setTimeout(() => setTyping(false), 1000);
+    return () => clearTimeout(t);
+  }, [screen.id]);
+  return (
+    <ScreenShell kind="fork" screenId={screen.id}>
+      <div className="xm-chat">
+        {heading ? <p className="xm-chat__sender">{substitute(heading.text, vars)}</p> : null}
+        {typing ? (
+          <div className="xm-chat__bubble xm-chat__bubble--typing" aria-label="печатает">
+            <span /><span /><span />
+          </div>
+        ) : (
+          <motion.div
+            className="xm-chat__bubble"
+            initial={{ opacity: 0, y: 10, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            {substitute(text?.text, vars)}
+          </motion.div>
+        )}
+        {!typing ? (
+          <motion.button
+            type="button"
+            className="screen__button xm-chat__btn"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.25 }}
+            onClick={() => onAction(action)}
+          >
+            {substitute(btn?.text, vars) || 'Дальше'}
+          </motion.button>
+        ) : null}
+      </div>
+    </ScreenShell>
+  );
+}
+
+/* ── Допрос с пристрастием (interrogation) ────────────────────────────────── */
+
+/** interrogation — тёмная комната допроса с раскачивающейся лампой. */
+function InterrogationIntro({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const text = screen.elements.find((el) => el.kind === 'text');
+  const btn = screen.elements.find((el) => el.kind === 'button');
+  const action = btn?.action ?? 'click:next';
+  return (
+    <ScreenShell kind="intro" screenId={screen.id}>
+      <div className="ir-intro">
+        <motion.div
+          className="ir-lamp"
+          aria-hidden
+          style={{ transformOrigin: 'top center' }}
+          animate={{ rotate: [-7, 7, -7] }}
+          transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          <span className="ir-lamp__wire" />
+          <span className="ir-lamp__bulb">💡</span>
+        </motion.div>
+        {heading ? (
+          <motion.h1
+            className="ir-intro__alert"
+            animate={{ opacity: [1, 0.4, 1] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            {substitute(heading.text, vars)}
+          </motion.h1>
+        ) : null}
+        {text ? <p className="screen__text">{substitute(text.text, vars)}</p> : null}
+        <button type="button" className="screen__button" onClick={() => onAction(action)}>
+          {substitute(btn?.text, vars) || 'Начать допрос 🎤'}
+        </button>
+      </div>
+    </ScreenShell>
+  );
+}
+
+/** interrogation — экран вопроса со «светом в лицо» и вариантами ответа. */
+function InterrogationQuestion({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const text = screen.elements.find((el) => el.kind === 'text' && el.id === 't')
+    ?? screen.elements.find((el) => el.kind === 'text');
+  const buttons = screen.elements.filter((el) => el.kind === 'button');
+  return (
+    <ScreenShell kind="fork" screenId={screen.id}>
+      <motion.div
+        className="ir-spotlight"
+        aria-hidden
+        animate={{ opacity: [0.45, 0.75, 0.45] }}
+        transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <div className="ir-question">
+        {heading ? <p className="ir-question__num">{substitute(heading.text, vars)}</p> : null}
+        {text ? <p className="ir-question__text">{substitute(text.text, vars)}</p> : null}
+        <div className="ir-question__options">
+          {buttons.map((b, i) => (
+            <motion.button
+              key={b.id ?? i}
+              type="button"
+              className="ir-question__option"
+              whileTap={{ scale: 0.96 }}
+              onClick={() => b.action && onAction(b.action)}
+            >
+              {substitute(b.text, vars)}
+            </motion.button>
+          ))}
+        </div>
+      </div>
+    </ScreenShell>
+  );
+}
+
+/* ── Тиндер-стори (tinder-story) ──────────────────────────────────────────── */
+
+/** tinder-story — экран загрузки «поиска пары» с пульсирующим логотипом. */
+function TinderLoading({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const text = screen.elements.find((el) => el.kind === 'text');
+  const btn = screen.elements.find((el) => el.kind === 'button');
+  const action = btn?.action ?? 'click:next';
+  return (
+    <ScreenShell kind="intro" screenId={screen.id}>
+      <div className="td-loading">
+        <motion.div
+          className="td-loading__flame"
+          aria-hidden
+          animate={{ scale: [1, 1.18, 1], rotate: [-4, 4, -4] }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          🔥
+        </motion.div>
+        {heading ? <h1 className="td-loading__logo">{substitute(heading.text, vars)}</h1> : null}
+        {text ? <p className="screen__text">{substitute(text.text, vars)}</p> : null}
+        <motion.button
+          type="button"
+          className="screen__button td-loading__btn"
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          onClick={() => onAction(action)}
+        >
+          {substitute(btn?.text, vars) || 'Начать поиск 💘'}
+        </motion.button>
+      </div>
+    </ScreenShell>
+  );
+}
+
+/** tinder-story — карточка профиля (свайп) и экран «IT'S A MATCH!». */
+function TinderFork({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const isMatch = screen.id === 'match';
+  const image = screen.elements.find((el) => el.kind === 'image');
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const text = screen.elements.find((el) => el.kind === 'text');
+  const btn = screen.elements.find((el) => el.kind === 'button');
+  const action = btn?.action ?? 'click:next';
+  const imgSrc = substitute(image?.src, vars);
+
+  if (isMatch) {
+    return (
+      <ScreenShell kind="fork" screenId={screen.id}>
+        <FloatingHearts count={16} />
+        <div className="td-match">
+          <motion.h1
+            className="td-match__title"
+            initial={{ scale: 0.3, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 220, damping: 11 }}
+          >
+            {substitute(heading?.text, vars) || "IT'S A MATCH!"}
+          </motion.h1>
+          {text ? <p className="td-match__text">{substitute(text.text, vars)}</p> : null}
+          <motion.button
+            type="button"
+            className="screen__button td-match__btn"
+            animate={{ scale: [1, 1.06, 1] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+            onClick={() => onAction(action)}
+          >
+            {substitute(btn?.text, vars) || 'Написать сообщение 💬'}
+          </motion.button>
+        </div>
+      </ScreenShell>
+    );
+  }
+
+  return (
+    <ScreenShell kind="fork" screenId={screen.id}>
+      <motion.div
+        className="td-card"
+        initial={{ opacity: 0, x: 64, rotate: 6 }}
+        animate={{ opacity: 1, x: 0, rotate: 0 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 18 }}
+      >
+        <div className="td-card__photo">
+          {imgSrc ? (
+            <StickerMedia className="td-card__img" src={imgSrc} />
+          ) : (
+            <span className="td-card__placeholder" aria-hidden>💘</span>
+          )}
+          <div className="td-card__info">
+            {heading ? <span className="td-card__name">{substitute(heading.text, vars)}</span> : null}
+            {text ? <span className="td-card__bio">{substitute(text.text, vars)}</span> : null}
+          </div>
+        </div>
+        <motion.button
+          type="button"
+          className="td-card__like"
+          whileTap={{ scale: 0.9 }}
+          animate={{ scale: [1, 1.1, 1] }}
+          transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+          onClick={() => onAction(action)}
+        >
+          {substitute(btn?.text, vars) || '♥ Нравится'}
+        </motion.button>
+      </motion.div>
+    </ScreenShell>
+  );
+}
+
+/* ── Новость дня (breaking-news) ──────────────────────────────────────────── */
+
+/** Бегущая строка новостей. */
+function NewsTicker(): ReactNode {
+  return (
+    <div className="bn-ticker" aria-hidden>
+      <motion.span
+        className="bn-ticker__track"
+        animate={{ x: ['0%', '-50%'] }}
+        transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
+      >
+        СРОЧНО · СЕНСАЦИЯ · ЭКСКЛЮЗИВ · СРОЧНО · СЕНСАЦИЯ · ЭКСКЛЮЗИВ ·&nbsp;
+        СРОЧНО · СЕНСАЦИЯ · ЭКСКЛЮЗИВ · СРОЧНО · СЕНСАЦИЯ · ЭКСКЛЮЗИВ ·&nbsp;
+      </motion.span>
+    </div>
+  );
+}
+
+/** breaking-news — мигающий баннер экстренного выпуска. */
+function BreakingIntro({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const text = screen.elements.find((el) => el.kind === 'text');
+  const btn = screen.elements.find((el) => el.kind === 'button');
+  const action = btn?.action ?? 'click:next';
+  return (
+    <ScreenShell kind="intro" screenId={screen.id}>
+      <div className="bn-intro">
+        <motion.div
+          className="bn-banner"
+          animate={{ opacity: [1, 0.55, 1] }}
+          transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          {substitute(heading?.text, vars) || '🔴 BREAKING NEWS'}
+        </motion.div>
+        {text ? <p className="bn-intro__lead">{substitute(text.text, vars)}</p> : null}
+        <button type="button" className="screen__button" onClick={() => onAction(action)}>
+          {substitute(btn?.text, vars) || 'Смотреть выпуск 📺'}
+        </button>
+      </div>
+      <NewsTicker />
+    </ScreenShell>
+  );
+}
+
+/** breaking-news — студийный «сюжет» с плашкой LIVE и заголовком. */
+function BreakingFork({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const text = screen.elements.find((el) => el.kind === 'text');
+  const btn = screen.elements.find((el) => el.kind === 'button');
+  const action = btn?.action ?? 'click:next';
+  return (
+    <ScreenShell kind="fork" screenId={screen.id}>
+      <div className="bn-report">
+        <motion.span
+          className="bn-report__live"
+          animate={{ opacity: [1, 0.4, 1] }}
+          transition={{ duration: 1, repeat: Infinity }}
+        >
+          ● LIVE
+        </motion.span>
+        {heading ? <p className="bn-report__label">{substitute(heading.text, vars)}</p> : null}
+        {text ? <h1 className="bn-report__headline">{substitute(text.text, vars)}</h1> : null}
+        <button type="button" className="screen__button" onClick={() => onAction(action)}>
+          {substitute(btn?.text, vars) || 'Подробности →'}
+        </button>
+      </div>
+      <NewsTicker />
+    </ScreenShell>
+  );
+}
+
+/* ── Гороскоп совместимости (horoscope) ───────────────────────────────────── */
+
+/** horoscope — звёздное интро с вращающимся кольцом знаков зодиака. */
+function HoroscopeIntro({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const text = screen.elements.find((el) => el.kind === 'text');
+  const btn = screen.elements.find((el) => el.kind === 'button');
+  const action = btn?.action ?? 'click:next';
+  return (
+    <ScreenShell kind="intro" screenId={screen.id}>
+      <div className="horo-intro">
+        <div className="horo-orbit" aria-hidden>
+          <motion.div
+            className="horo-orbit__ring"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
+          >
+            ♈ ♉ ♊ ♋ ♌ ♍ ♎ ♏ ♐ ♑ ♒ ♓
+          </motion.div>
+          <motion.span
+            className="horo-orbit__core"
+            animate={{ scale: [1, 1.15, 1] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            ✨
+          </motion.span>
+        </div>
+        {heading ? <h1 className="screen__heading">{substitute(heading.text, vars)}</h1> : null}
+        {text ? <p className="screen__text">{substitute(text.text, vars)}</p> : null}
+        <button type="button" className="screen__button" onClick={() => onAction(action)}>
+          {substitute(btn?.text, vars) || 'Узнать гороскоп ♈'}
+        </button>
+      </div>
+    </ScreenShell>
+  );
+}
+
+/** horoscope — расчёт (счётчик до 100%) и результат (бейдж 100%). */
+function HoroscopeFork({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const isCalc = screen.id === 'calc';
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const text = screen.elements.find((el) => el.kind === 'text');
+  const btn = screen.elements.find((el) => el.kind === 'button');
+  const action = btn?.action ?? 'click:next';
+  return (
+    <ScreenShell kind="fork" screenId={screen.id}>
+      <div className="horo-fork">
+        {isCalc ? (
+          <>
+            <motion.div
+              className="horo-fork__ring"
+              aria-hidden
+              animate={{ rotate: 360 }}
+              transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+            >
+              ♈ ♉ ♊ ♋ ♌ ♍ ♎ ♏ ♐ ♑ ♒ ♓
+            </motion.div>
+            <div className="horo-fork__percent">
+              <CountUp to={100} />%
+            </div>
+            {heading ? <p className="screen__text">{substitute(heading.text, vars)}</p> : null}
+          </>
+        ) : (
+          <>
+            <motion.div
+              className="horo-fork__badge"
+              initial={{ scale: 0.4, opacity: 0, rotate: -12 }}
+              animate={{ scale: 1, opacity: 1, rotate: 0 }}
+              transition={{ type: 'spring', stiffness: 220, damping: 12 }}
+            >
+              100%
+            </motion.div>
+            {heading ? <h1 className="screen__heading">{substitute(heading.text, vars)}</h1> : null}
+            {text ? <p className="screen__text">{substitute(text.text, vars)}</p> : null}
+          </>
+        )}
+        <button type="button" className="screen__button" onClick={() => onAction(action)}>
+          {substitute(btn?.text, vars) || 'Дальше'}
+        </button>
+      </div>
+    </ScreenShell>
+  );
+}
+
+/* ── Авиабилет (boarding) ─────────────────────────────────────────────────── */
+
+/** boarding — интро с летящим самолётом. */
+function BoardingIntro({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const text = screen.elements.find((el) => el.kind === 'text');
+  const btn = screen.elements.find((el) => el.kind === 'button');
+  const action = btn?.action ?? 'click:next';
+  return (
+    <ScreenShell kind="intro" screenId={screen.id}>
+      <div className="bd-intro">
+        <motion.div
+          className="bd-plane"
+          aria-hidden
+          animate={{ x: ['-45%', '45%'], y: ['6%', '-6%'] }}
+          transition={{ duration: 3.4, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }}
+        >
+          ✈️
+        </motion.div>
+        {heading ? <h1 className="screen__heading">{substitute(heading.text, vars)}</h1> : null}
+        {text ? <p className="screen__text">{substitute(text.text, vars)}</p> : null}
+        <button type="button" className="screen__button" onClick={() => onAction(action)}>
+          {substitute(btn?.text, vars) || 'Открыть билет'}
+        </button>
+      </div>
+    </ScreenShell>
+  );
+}
+
+/** boarding — посадочный талон с перфорацией и штрихкодом. */
+function BoardingFork({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const text = screen.elements.find((el) => el.kind === 'text');
+  const btn = screen.elements.find((el) => el.kind === 'button');
+  const action = btn?.action ?? 'click:next';
+  return (
+    <ScreenShell kind="fork" screenId={screen.id}>
+      <motion.div
+        className="bd-pass"
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+      >
+        <div className="bd-pass__head">
+          <span>BOARDING PASS</span>
+          <span aria-hidden>✈️</span>
+        </div>
+        {heading ? <p className="bd-pass__flight">{substitute(heading.text, vars)}</p> : null}
+        {text ? <p className="bd-pass__details">{substitute(text.text, vars)}</p> : null}
+        <div className="bd-pass__perf" aria-hidden />
+        <div className="bd-pass__barcode" aria-hidden />
+        <button type="button" className="screen__button bd-pass__btn" onClick={() => onAction(action)}>
+          {substitute(btn?.text, vars) || 'Регистрация на рейс →'}
+        </button>
+      </motion.div>
+    </ScreenShell>
+  );
+}
+
+/* ── Машина времени (time-machine) ────────────────────────────────────────── */
+
+/** time-machine — интро с вращающимся порталом. */
+function TimeMachineIntro({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const text = screen.elements.find((el) => el.kind === 'text');
+  const btn = screen.elements.find((el) => el.kind === 'button');
+  const action = btn?.action ?? 'click:next';
+  return (
+    <ScreenShell kind="intro" screenId={screen.id}>
+      <div className="tm-intro">
+        <div className="tm-portal" aria-hidden>
+          <motion.span
+            className="tm-portal__ring"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
+          />
+          <motion.span
+            className="tm-portal__icon"
+            animate={{ scale: [1, 1.12, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            ⏳
+          </motion.span>
+        </div>
+        {heading ? <h1 className="screen__heading">{substitute(heading.text, vars)}</h1> : null}
+        {text ? <p className="screen__text">{substitute(text.text, vars)}</p> : null}
+        <button type="button" className="screen__button" onClick={() => onAction(action)}>
+          {substitute(btn?.text, vars) || 'Запустить ⏳'}
+        </button>
+      </div>
+    </ScreenShell>
+  );
+}
+
+/** time-machine — «эпоха»: фото-полароид с подписью, либо текстовый экран. */
+function TimeMachineFork({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const image = screen.elements.find((el) => el.kind === 'image');
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const text = screen.elements.find((el) => el.kind === 'text');
+  const btn = screen.elements.find((el) => el.kind === 'button');
+  const action = btn?.action ?? 'click:next';
+  const imgSrc = substitute(image?.src, vars);
+  return (
+    <ScreenShell kind="fork" screenId={screen.id}>
+      <div className="tm-fork">
+        {imgSrc ? (
+          <motion.div
+            className="tm-polaroid"
+            initial={{ opacity: 0, rotate: -4, y: 18 }}
+            animate={{ opacity: 1, rotate: 0, y: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+          >
+            <StickerMedia className="tm-polaroid__img" src={imgSrc} />
+            {heading ? <span className="tm-polaroid__caption">{substitute(heading.text, vars)}</span> : null}
+          </motion.div>
+        ) : heading ? (
+          <h1 className="screen__heading">{substitute(heading.text, vars)}</h1>
+        ) : null}
+        {text ? <p className="tm-fork__text">{substitute(text.text, vars)}</p> : null}
+        <button type="button" className="screen__button" onClick={() => onAction(action)}>
+          {substitute(btn?.text, vars) || 'Дальше →'}
+        </button>
+      </div>
+    </ScreenShell>
+  );
+}
+
+/* ── Квест: Найди приглашение (quest) ──────────────────────────────────────── */
+
+/**
+ * Квест — вступительный экран.
+ * Атмосферный детективный стиль: лупа-эмодзи, заголовок, кнопка «Начать».
+ */
+function QuestIntro({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const text = screen.elements.find((el) => el.kind === 'text');
+  const btn = screen.elements.find((el) => el.kind === 'button');
+  const action = btn?.action ?? 'click:start';
+  return (
+    <ScreenShell kind="intro" screenId={screen.id}>
+      <div className="quest-intro">
+        <motion.div
+          className="quest-intro__icon"
+          aria-hidden
+          animate={{ rotate: [-8, 8, -8] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          🔍
+        </motion.div>
+        {heading && (
+          <h1 className="screen__heading">{substitute(heading.text, vars)}</h1>
+        )}
+        {text && (
+          <p className="quest-intro__desc">{substitute(text.text, vars)}</p>
+        )}
+        <motion.button
+          type="button"
+          className="screen__button quest-intro__start"
+          animate={{ scale: [1, 1.06, 1] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+          onClick={() => onAction(action)}
+        >
+          {substitute(btn?.text, vars) || 'Начать квест 🚀'}
+        </motion.button>
+      </div>
+    </ScreenShell>
+  );
+}
+
+/**
+ * Квест — экран загадки.
+ *
+ * Кнопки вариантов перемешиваются один раз при монтировании (useMemo + стабильный
+ * seed), чтобы правильный ответ каждый раз оказывался на разной позиции.
+ * Кнопки с пустым текстом (необязательный 3-й неверный вариант) скрываются.
+ */
+function QuestRiddle({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const question = screen.elements.find((el) => el.kind === 'text' && el.id === 'q');
+  const buttons = screen.elements.filter((el) => el.kind === 'button');
+
+  // Shuffle buttons once per screen mount so the correct answer isn't always first.
+  const shuffled = useMemo(() => {
+    const resolved = buttons
+      .map((btn) => ({ text: substitute(btn.text, vars), action: btn.action ?? '' }))
+      .filter((b) => b.text.trim() !== '');
+    // Fisher-Yates with a fixed-ish seed (screen id length) to stay stable across renders.
+    const arr = [...resolved];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(((i * 31 + screen.id.length * 7) % (i + 1)));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen.id]);
+
+  return (
+    <ScreenShell kind="fork" screenId={screen.id}>
+      <div className="quest-riddle">
+        {heading && (
+          <p className="quest-riddle__badge">{substitute(heading.text, vars)}</p>
+        )}
+        {question && (
+          <p className="quest-riddle__question">{substitute(question.text, vars)}</p>
+        )}
+        <div className="quest-riddle__options" role="list">
+          {shuffled.map((btn, i) => (
+            <motion.button
+              key={i}
+              type="button"
+              role="listitem"
+              className="quest-riddle__option"
+              whileTap={{ scale: 0.95 }}
+              onClick={() => btn.action && onAction(btn.action)}
+            >
+              {btn.text}
+            </motion.button>
+          ))}
+        </div>
+      </div>
+    </ScreenShell>
+  );
+}
+
+/**
+ * Квест — экран «Не то! Попробовать ещё раз».
+ * Показывает подсказку (если автор её задал) и кнопку возврата к загадке.
+ */
+function QuestWrong({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const hint = screen.elements.find((el) => el.kind === 'text' && el.id === 'hint');
+  const btn = screen.elements.find((el) => el.kind === 'button');
+  const action = btn?.action ?? 'click:retry';
+  const hintText = substitute(hint?.text, vars);
+  return (
+    <ScreenShell kind="fork" screenId={screen.id}>
+      <div className="quest-wrong">
+        <motion.div
+          className="quest-wrong__icon"
+          aria-hidden
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 280, damping: 18 }}
+        >
+          ❌
+        </motion.div>
+        {heading && (
+          <h1 className="screen__heading">{substitute(heading.text, vars)}</h1>
+        )}
+        {hintText ? (
+          <p className="quest-wrong__hint">{hintText}</p>
+        ) : null}
+        <button
+          type="button"
+          className="screen__button quest-wrong__retry"
+          onClick={() => onAction(action)}
+        >
+          {substitute(btn?.text, vars) || 'Попробовать ещё раз 🔄'}
+        </button>
+      </div>
+    </ScreenShell>
+  );
+}
+
+/**
+ * Квест — экран «Тайник найден!».
+ * Атмосферный момент перед открытием приглашения.
+ */
+function QuestChest({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const text = screen.elements.find((el) => el.kind === 'text');
+  const btn = screen.elements.find((el) => el.kind === 'button');
+  const action = btn?.action ?? 'click:open';
+  return (
+    <ScreenShell kind="fork" screenId={screen.id}>
+      <div className="quest-chest">
+        <motion.div
+          className="quest-chest__icon"
+          aria-hidden
+          animate={{ y: [0, -10, 0], rotate: [0, 3, 0, -3, 0] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          🎁
+        </motion.div>
+        {heading && (
+          <h1 className="screen__heading">{substitute(heading.text, vars)}</h1>
+        )}
+        {text && <p className="quest-chest__text">{substitute(text.text, vars)}</p>}
+        <motion.button
+          type="button"
+          className="screen__button quest-chest__open"
+          animate={{ scale: [1, 1.08, 1] }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+          onClick={() => onAction(action)}
+        >
+          {substitute(btn?.text, vars) || 'Открыть 🔓'}
+        </motion.button>
+      </div>
+    </ScreenShell>
+  );
+}
+
+/** Whether the current screen belongs to the quest template. */
+function isQuest(templateId: string | undefined): boolean {
+  return templateId === 'quest';
+}
+
+/**
+ * Квест — выбор нужного компонента по id экрана:
+ *  intro / chest → специфичный экран
+ *  r1 / r2       → QuestRiddle (загадка)
+ *  r1_wrong / r2_wrong → QuestWrong (неверный ответ)
+ */
+function QuestForkScreen(props: ScreenProps): ReactNode {
+  const id = props.screen.id;
+  if (id === 'chest') return QuestChest(props);
+  if (id === 'r1_wrong' || id === 'r2_wrong') return QuestWrong(props);
+  // r1, r2 и любые будущие экраны с вариантами ответа
+  return QuestRiddle(props);
+}
+
+/* ── end quest ─────────────────────────────────────────────────────────────── */
+
 function IntroScreen(props: ScreenProps): ReactNode {
+  if (isQuest(props.templateId)) return QuestIntro(props);
+  if (props.templateId === 'ex-message') return ExMessageLock(props);
+  if (props.templateId === 'interrogation') return InterrogationIntro(props);
+  if (props.templateId === 'tinder-story') return TinderLoading(props);
+  if (props.templateId === 'breaking-news') return BreakingIntro(props);
+  if (props.templateId === 'horoscope') return HoroscopeIntro(props);
+  if (props.templateId === 'boarding') return BoardingIntro(props);
+  if (props.templateId === 'time-machine') return TimeMachineIntro(props);
   if (props.templateId === 'mission-date') return MissionDateIntro(props);
   if (props.templateId === 'secret-letter') return SecretLetterEnvelope(props);
   if (props.templateId === 'movie-poster') return MoviePosterIntro(props);
@@ -1058,8 +1831,7 @@ function DateAskInvite({ screen, vars, onAction }: ScreenProps): ReactNode {
       <FloatingHearts count={8} />
       <div className="da-screen">
         {imgSrc ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="da-image" src={imgSrc} alt="" />
+          <StickerMedia className="da-image" src={imgSrc} />
         ) : null}
         {headingText ? <h1 className="screen__heading">{headingText}</h1> : null}
         {showSubtitle && subtitleText ? (
@@ -1076,6 +1848,7 @@ function DateAskInvite({ screen, vars, onAction }: ScreenProps): ReactNode {
           <RunawayButton
             yesLabel={substitute(yesBtn?.text, vars) || 'Да'}
             noLabel={substitute(noBtn?.text, vars) || 'Нет'}
+            behavior={resolveNoBehavior(vars['кнопка_нет_поведение'])}
             onYes={handleYes}
           />
         ) : null}
@@ -1098,6 +1871,14 @@ function InviteScreen(props: ScreenProps): ReactNode {
 }
 
 function ForkScreen(props: ScreenProps): ReactNode {
+  if (isQuest(props.templateId)) return QuestForkScreen(props);
+  if (props.templateId === 'ex-message') return ExMessageChat(props);
+  if (props.templateId === 'interrogation') return InterrogationQuestion(props);
+  if (props.templateId === 'tinder-story') return TinderFork(props);
+  if (props.templateId === 'breaking-news') return BreakingFork(props);
+  if (props.templateId === 'horoscope') return HoroscopeFork(props);
+  if (props.templateId === 'boarding') return BoardingFork(props);
+  if (props.templateId === 'time-machine') return TimeMachineFork(props);
   if (isStoryFork(props.templateId)) return StoryForkConfirm(props);
   return (
     <ScreenShell kind="fork" screenId={props.screen.id}>

@@ -32,6 +32,25 @@ export function fInviteText(label = 'Текст приглашения'): Templa
 export const fBtnYes: TemplateField = { key: 'btn_yes', label: 'Кнопка «Да»', type: 'text', required: false, maxLength: 30, defaultValue: 'Да' };
 export const fBtnNo: TemplateField = { key: 'btn_no', label: 'Кнопка «Нет»', type: 'text', required: false, maxLength: 30, defaultValue: 'Нет' };
 
+/**
+ * Поведение кнопки «Нет» (RunawayButton). Автор выбирает, как она «уворачивается»
+ * от гостя. Необязательное поле со значением по умолчанию «Убегает».
+ */
+export const fNoBehavior: TemplateField = {
+  key: 'кнопка_нет_поведение',
+  label: 'Поведение кнопки «Нет»',
+  type: 'select',
+  required: false,
+  defaultValue: 'runaway',
+  options: [
+    { value: 'runaway', label: '🏃 Убегает по экрану' },
+    { value: 'vanish', label: '💨 Испаряется' },
+    { value: 'teleport', label: '✨ Телепортируется' },
+    { value: 'shrink', label: '🔽 Сжимается и исчезает' },
+    { value: 'spin', label: '🌀 Улетает кувырком' },
+  ],
+};
+
 /** Группа полей экрана подтверждения. */
 export const confirmFields: TemplateField[] = [
   { key: 'screen2_image', label: 'Картинка подтверждения', type: 'image', required: false },
@@ -56,6 +75,7 @@ export function composeFields(opts: {
     fInviteText(opts.inviteLabel),
     fBtnYes,
     fBtnNo,
+    fNoBehavior,
     ...confirmFields,
     fSignature,
   ];
