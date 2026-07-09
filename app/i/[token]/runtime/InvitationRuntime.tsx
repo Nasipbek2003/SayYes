@@ -25,7 +25,7 @@
  * in-app browsers of Telegram / WhatsApp / Instagram.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 
 import { ScenarioEngine } from '@/lib/scenario/engine';
 import type { PublicInvitation } from '@/lib/services/invitation';
@@ -141,6 +141,10 @@ export function InvitationRuntime({ invitation }: InvitationRuntimeProps) {
   };
 
   return (
+    // `reducedMotion="user"` makes every Framer Motion animation below respect
+    // the OS "reduce motion" setting (важно и для доступности, и для встроенных
+    // webview мессенджеров). Canvas confetti is guarded separately in Confetti.
+    <MotionConfig reducedMotion="user">
     <main
       className="invitation-runtime"
       data-template={invitation.templateId}
@@ -182,8 +186,26 @@ export function InvitationRuntime({ invitation }: InvitationRuntimeProps) {
       </AnimatePresence>
 
       {invitation.features.showBrandSignature ? (
-        <footer className="brand-signature">Сделано с ♥ на SayYes</footer>
+        // Viral loop (growth): on the final screen the brand line becomes a
+        // prominent "make your own" CTA — the strongest moment to convert a
+        // delighted guest into a new author. Removed entirely for premium /
+        // "без рекламы" links (showBrandSignature=false). `?ref=invite` lets us
+        // attribute sign-ups that came through a shared invitation.
+        ready && engine.isFinal() ? (
+          <motion.a
+            className="viral-cta"
+            href="/?ref=invite"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.4 }}
+          >
+            Хочешь сделать такое же? Создай за 2 минуты →
+          </motion.a>
+        ) : (
+          <footer className="brand-signature">Сделано с ♥ на SayYes</footer>
+        )
       ) : null}
     </main>
+    </MotionConfig>
   );
 }

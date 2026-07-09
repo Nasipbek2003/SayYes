@@ -79,6 +79,7 @@ describe('template registration', () => {
       'boarding',
       'quest',
       'time-machine',
+      'tilt-card',
       'simple-date',
       'story-fork',
       'event-rsvp',

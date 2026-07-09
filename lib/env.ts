@@ -10,6 +10,22 @@ function optional(key: string, fallback = ''): string {
   return process.env[key] ?? fallback;
 }
 
+/**
+ * Parse a Cloudinary connection string of the form
+ * `cloudinary://<api_key>:<api_secret>@<cloud_name>` into its parts. Returns
+ * null when the value is empty or malformed, so callers can fall back to the
+ * discrete `CLOUDINARY_*` variables.
+ */
+function parseCloudinaryUrl(
+  url: string,
+): { cloudName: string; apiKey: string; apiSecret: string } | null {
+  const match = /^cloudinary:\/\/([^:]+):([^@]+)@(.+)$/.exec(url.trim());
+  if (!match) return null;
+  return { apiKey: match[1], apiSecret: match[2], cloudName: match[3] };
+}
+
+const cloudinaryParsed = parseCloudinaryUrl(optional('CLOUDINARY_URL'));
+
 export const env = {
   appUrl: optional('NEXT_PUBLIC_APP_URL', 'http://localhost:3000'),
   nodeEnv: optional('NODE_ENV', 'development'),
@@ -27,6 +43,38 @@ export const env = {
     webhookSecret: optional('TELEGRAM_WEBHOOK_SECRET'),
     /** Bot username (without @) used to build t.me deep-links for linking. */
     botUsername: optional('TELEGRAM_BOT_USERNAME'),
+  },
+
+  /**
+   * Cloudinary image storage (author photos). Prefer the single
+   * `CLOUDINARY_URL` connection string; discrete `CLOUDINARY_*` vars are a
+   * fallback. `uploadFolder` namespaces uploads inside the account.
+   */
+  cloudinary: {
+    cloudName: cloudinaryParsed?.cloudName ?? optional('CLOUDINARY_CLOUD_NAME'),
+    apiKey: cloudinaryParsed?.apiKey ?? optional('CLOUDINARY_API_KEY'),
+    apiSecret: cloudinaryParsed?.apiSecret ?? optional('CLOUDINARY_API_SECRET'),
+    uploadFolder: optional('CLOUDINARY_UPLOAD_FOLDER', 'sayyes'),
+  },
+
+  /**
+   * Upstash Redis (REST) — optional shared store for rate limiting across
+   * serverless instances. When absent, the limiter falls back to a
+   * process-local in-memory store (fine for a single long-lived process).
+   */
+  upstash: {
+    restUrl: optional('UPSTASH_REDIS_REST_URL'),
+    restToken: optional('UPSTASH_REDIS_REST_TOKEN'),
+  },
+
+  /**
+   * Product analytics — optional PostHog forwarding for the conversion funnel.
+   * When the key is absent, funnel events are still recorded via the structured
+   * logger (visible in logs / log drains); PostHog is a bonus, not required.
+   */
+  analytics: {
+    posthogKey: optional('POSTHOG_KEY'),
+    posthogHost: optional('POSTHOG_HOST', 'https://us.i.posthog.com'),
   },
 
   s3: {

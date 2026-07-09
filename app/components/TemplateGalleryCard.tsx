@@ -28,6 +28,7 @@ import {
   Plane,
   Radio,
   Sparkles,
+  Smartphone,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -120,6 +121,12 @@ const pulse: Variants = {
   active: { scale: [1, 1.14, 1], opacity: [1, 0.65, 1], transition: { duration: 0.9, repeat: Infinity, ease: 'easeInOut' } },
 };
 
+/* Наклон карточки — имитирует голографический тилт (rotateX/rotateY через skew-подобное покачивание). */
+const tilt: Variants = {
+  rest: { rotate: 0, y: 0 },
+  active: { rotate: [-10, 10, -6, 6, 0], y: [0, -3, 0], transition: { duration: 1.3, repeat: Infinity, ease: 'easeInOut' } },
+};
+
 /* ── Карта тем по шаблонам ─────────────────────────────────────────────────── */
 
 const THEMES: Record<string, CardTheme> = {
@@ -137,6 +144,7 @@ const THEMES: Record<string, CardTheme> = {
   'ex-message': { Icon: MessageCircle, color: '#E8367A', glow: 'rgba(232,54,122,0.4)', bg: 'linear-gradient(150deg, #FFE3EC 0%, #FFD0E0 100%)', variants: buzz },
   boarding: { Icon: Plane, color: '#1976D2', glow: 'rgba(25,118,210,0.4)', bg: 'linear-gradient(150deg, #E3F2FD 0%, #BBDEFB 100%)', variants: fly },
   'breaking-news': { Icon: Radio, color: '#D32F2F', glow: 'rgba(211,47,47,0.4)', bg: 'linear-gradient(150deg, #FFFFFF 0%, #F0F0F0 100%)', variants: pulse },
+  'tilt-card': { Icon: Smartphone, color: '#8C78FF', glow: 'rgba(140,120,255,0.45)', bg: 'linear-gradient(150deg, #1A1A40 0%, #2A2A66 100%)', variants: tilt },
 };
 
 const DEFAULT_THEME: CardTheme = {
@@ -202,10 +210,39 @@ export function TemplateGalleryCard({
       </Link>
       <div className={styles.cardBody}>
         <h3 className={styles.cardTitle}>{template.name}</h3>
+        {template.seasons.length > 0 ? (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
+            {template.seasons.map((season) => (
+              <span
+                key={season.id}
+                style={{
+                  fontSize: 11,
+                  lineHeight: 1.6,
+                  padding: '2px 8px',
+                  borderRadius: 999,
+                  background: 'rgba(0,0,0,0.05)',
+                  color: 'var(--text-muted, #6b7280)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {season.emoji} {season.label}
+              </span>
+            ))}
+          </div>
+        ) : null}
         <p className={styles.cardDesc}>{template.description}</p>
-        <Link href={template.createHref} className={styles.createButton}>
-          Создать →
-        </Link>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <Link href={template.createHref} className={styles.createButton}>
+            Создать →
+          </Link>
+          {/* Живое демо: пройти сценарий как адресат до оплаты (рост конверсии). */}
+          <Link
+            href={template.demoHref}
+            style={{ fontSize: 14, fontWeight: 600, color: 'var(--tpl-accent, #e8367a)', textDecoration: 'none' }}
+          >
+            Демо
+          </Link>
+        </div>
       </div>
     </motion.li>
   );

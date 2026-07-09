@@ -15,10 +15,11 @@
  * store for multi-instance deploys.
  */
 import {
-  RateLimiter,
+  AsyncRateLimiter,
   type RateLimitConfig,
   type RateLimitResult,
 } from './rateLimiter';
+import { createRateLimiterStore } from './store';
 
 /** Action being limited; each gets its own counter namespace + policy. */
 export type PublicAction = 'open' | 'respond';
@@ -56,10 +57,13 @@ export function rateLimitKey(
   return `${action}:${token}:${ip}`;
 }
 
-// One shared limiter per action, holding the process-local counters.
-const limiters: Record<PublicAction, RateLimiter> = {
-  open: new RateLimiter(PUBLIC_RATE_LIMITS.open),
-  respond: new RateLimiter(PUBLIC_RATE_LIMITS.respond),
+// One shared store (Upstash Redis when configured, else in-memory) and one
+// limiter per action. A shared store enforces a single limit across serverless
+// instances; see `store.ts` for the selection logic and fail-open behaviour.
+const store = createRateLimiterStore();
+const limiters: Record<PublicAction, AsyncRateLimiter> = {
+  open: new AsyncRateLimiter(PUBLIC_RATE_LIMITS.open, store),
+  respond: new AsyncRateLimiter(PUBLIC_RATE_LIMITS.respond, store),
 };
 
 /**
@@ -70,13 +74,13 @@ const limiters: Record<PublicAction, RateLimiter> = {
  * runtime client recognise the throttle and degrade gracefully instead of
  * surfacing a technical error to the guest (Requirement 4.4).
  */
-export function enforcePublicRateLimit(
+export async function enforcePublicRateLimit(
   action: PublicAction,
   token: string,
   headers: Headers,
-): { result: RateLimitResult; response: Response | null } {
+): Promise<{ result: RateLimitResult; response: Response | null }> {
   const ip = clientIpFromHeaders(headers);
-  const result = limiters[action].check(rateLimitKey(action, token, ip));
+  const result = await limiters[action].check(rateLimitKey(action, token, ip));
 
   if (result.allowed) {
     return { result, response: null };

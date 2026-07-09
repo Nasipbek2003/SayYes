@@ -28,6 +28,57 @@ const galleryRegistry: TemplateRegistry = new InMemoryTemplateRegistry(gallerySc
 /** Base path of the creation flow (task 10.2 fills in the actual form). */
 export const CREATE_PATH = '/create';
 
+/* --- Seasonal packs (growth: тематические подборки под сезонные поводы) ------ */
+
+/** Identifier of a seasonal pack. */
+export type SeasonId = 'valentine' | 'march8' | 'newyear' | 'wedding';
+
+/** Render-ready description of a seasonal pack. */
+export interface SeasonView {
+  id: SeasonId;
+  /** Human-readable label shown as a section title / badge. */
+  label: string;
+  /** Decorative emoji for the pack. */
+  emoji: string;
+}
+
+/**
+ * Ordered list of seasonal packs. Order = display order of seasonal sections in
+ * the gallery. Extend this list to add a new pack, then tag templates below.
+ */
+export const SEASONS: readonly SeasonView[] = [
+  { id: 'valentine', label: '14 февраля', emoji: '❤️' },
+  { id: 'march8', label: '8 марта', emoji: '🌷' },
+  { id: 'newyear', label: 'Новый год', emoji: '🎄' },
+  { id: 'wedding', label: 'Свадьба и той', emoji: '💍' },
+];
+
+const SEASON_BY_ID: Record<SeasonId, SeasonView> = Object.fromEntries(
+  SEASONS.map((s) => [s.id, s]),
+) as Record<SeasonId, SeasonView>;
+
+/**
+ * Which seasonal packs each template belongs to. A template may appear in
+ * several packs. Templates absent here are simply not part of any seasonal
+ * section (still shown in the full catalog). Colocated with the gallery
+ * presentation data; can later move into the template schema.
+ */
+const TEMPLATE_SEASONS: Record<string, SeasonId[]> = {
+  'date-ask': ['valentine'],
+  'secret-letter': ['valentine'],
+  'movie-poster': ['valentine'],
+  'tinder-story': ['valentine'],
+  'ex-message': ['valentine'],
+  'mission-date': ['valentine'],
+  'recipe-date': ['march8'],
+  horoscope: ['march8', 'newyear'],
+  'wish-star': ['newyear', 'march8'],
+  'time-machine': ['newyear'],
+  quest: ['newyear'],
+  boarding: ['wedding'],
+  'tilt-card': ['valentine'],
+};
+
 /** Human-readable Russian labels for the colour theme ids used by templates. */
 const THEME_LABELS: Record<string, string> = {
   neutral: 'Нейтральная',
@@ -75,6 +126,27 @@ export interface GalleryTemplateView {
    * (first) theme (Requirement 1.2). Per-theme links live on {@link themes}.
    */
   createHref: string;
+  /** Seasonal packs this template belongs to (empty when none). */
+  seasons: SeasonView[];
+  /** Deep link to the interactive "try as guest" demo for this template. */
+  demoHref: string;
+}
+
+/** A seasonal pack together with the templates it contains. */
+export interface SeasonalSection {
+  season: SeasonView;
+  templates: GalleryTemplateView[];
+}
+
+/** Base path of the interactive template demo (try as guest, no payment). */
+export const DEMO_PATH = '/demo';
+
+/** Build the demo deep link for a template/theme pair. */
+export function buildDemoHref(templateId: string, themeId?: string): string {
+  const params = new URLSearchParams();
+  if (themeId) params.set('theme', themeId);
+  const query = params.toString();
+  return `${DEMO_PATH}/${encodeURIComponent(templateId)}${query ? `?${query}` : ''}`;
 }
 
 /** Build the deep link into the creation flow for a template/theme pair. */
@@ -108,6 +180,7 @@ const TEMPLATE_EMOJI: Record<string, string> = {
   'ex-message': '📱',
   boarding: '✈️',
   'breaking-news': '📰',
+  'tilt-card': '📱',
 };
 
 /** Map one registry summary to a render-ready card view. */
@@ -126,6 +199,10 @@ function toTemplateView(summary: TemplateSummary): GalleryTemplateView {
     href: buildCreateHref(summary.id, themeId),
   }));
 
+  const seasons = (TEMPLATE_SEASONS[summary.id] ?? []).map(
+    (seasonId) => SEASON_BY_ID[seasonId],
+  );
+
   return {
     id: summary.id,
     name: summary.name,
@@ -134,6 +211,8 @@ function toTemplateView(summary: TemplateSummary): GalleryTemplateView {
     previewEmoji: TEMPLATE_EMOJI[summary.id] ?? resolveOgTheme(defaultThemeId).emoji,
     themes,
     createHref: buildCreateHref(summary.id, defaultThemeId),
+    seasons,
+    demoHref: buildDemoHref(summary.id, defaultThemeId),
   };
 }
 
@@ -148,4 +227,24 @@ export function buildGallery(
   registry: TemplateRegistry = galleryRegistry,
 ): GalleryTemplateView[] {
   return registry.list().map(toTemplateView);
+}
+
+/**
+ * Group templates into seasonal packs (Valentine's, 8 March, New Year, wedding)
+ * in {@link SEASONS} order. Packs with no matching template are omitted, so the
+ * gallery can render "Сезонные подборки" sections that are always non-empty.
+ * Builds from the same view models as {@link buildGallery}.
+ */
+export function buildSeasonalSections(
+  registry: TemplateRegistry = galleryRegistry,
+): SeasonalSection[] {
+  const views = buildGallery(registry);
+  const sections: SeasonalSection[] = [];
+  for (const season of SEASONS) {
+    const templates = views.filter((view) =>
+      view.seasons.some((s) => s.id === season.id),
+    );
+    if (templates.length > 0) sections.push({ season, templates });
+  }
+  return sections;
 }

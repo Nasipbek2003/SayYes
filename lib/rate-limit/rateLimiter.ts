@@ -167,3 +167,40 @@ export class RateLimiter {
     return result;
   }
 }
+
+/**
+ * Async variant of {@link RateLimiterStore} for backends whose reads/writes are
+ * I/O-bound (e.g. a Redis REST API). Same contract, Promise-returning.
+ */
+export interface AsyncRateLimiterStore {
+  get(key: string): Promise<WindowState | undefined>;
+  set(key: string, state: WindowState, ttlMs: number): Promise<void>;
+}
+
+/**
+ * Rate limiter over an {@link AsyncRateLimiterStore}, using the same pure
+ * {@link evaluateWindow} decision as the sync {@link RateLimiter}. Used for the
+ * public endpoints so a shared store (Redis) can enforce a single limit across
+ * serverless instances; a process-local async store is used when Redis is not
+ * configured.
+ *
+ * The get-then-set is not atomic, so under high concurrency a key may briefly
+ * admit a few extra requests — acceptable for abuse protection (the sync
+ * in-memory limiter has the same fixed-window boundary slack). The window
+ * length is passed as the store TTL so keys expire on their own.
+ */
+export class AsyncRateLimiter {
+  constructor(
+    private readonly config: RateLimitConfig,
+    private readonly store: AsyncRateLimiterStore,
+    private readonly now: () => number = Date.now,
+  ) {}
+
+  /** Count one request against `key` and return whether it is allowed. */
+  async check(key: string): Promise<RateLimitResult> {
+    const prior = await this.store.get(key);
+    const { state, result } = evaluateWindow(prior, this.now(), this.config);
+    await this.store.set(key, state, this.config.windowMs);
+    return result;
+  }
+}

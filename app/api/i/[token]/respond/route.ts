@@ -36,6 +36,7 @@ import {
 } from '@/lib/services/invitation';
 import { outboxWorker } from '@/lib/notifications/outboxWorker';
 import { logger } from '@/lib/logger';
+import { track } from '@/lib/analytics';
 import type { GuestResponse } from '@/templates/types';
 
 export const runtime = 'nodejs';
@@ -49,7 +50,7 @@ export async function POST(
   // Public, unauthenticated endpoint — throttle response spam per token +
   // client IP (task 11.2). A 429 is handled gracefully by the runtime client
   // (Req 4.4), which keeps the guest on the scenario instead of erroring.
-  const { response: limited } = enforcePublicRateLimit(
+  const { response: limited } = await enforcePublicRateLimit(
     'respond',
     token,
     request.headers,
@@ -75,6 +76,9 @@ export async function POST(
       token,
       body as GuestResponse,
     );
+
+    // Funnel: a guest completed the scenario (conversion analytics, gap #5).
+    track('invitation_responded', { token, updated });
 
     // Best-effort: deliver the just-enqueued author notification immediately so
     // it doesn't wait for the next cron run. Delivery failures must never fail

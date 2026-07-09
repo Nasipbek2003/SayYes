@@ -13,6 +13,7 @@ import { authErrorToResponse } from '@/lib/auth';
 import { requireAuthor } from '@/lib/auth/nextCookies';
 import { invitationService } from '@/lib/services/invitation';
 import { invitationErrorToResponse } from '@/lib/api/errorResponses';
+import { track } from '@/lib/analytics';
 
 export const runtime = 'nodejs';
 
@@ -61,6 +62,12 @@ export async function POST(request: Request): Promise<Response> {
       data,
       notifyTelegram,
     );
+    // Funnel: top of the conversion funnel (conversion analytics, gap #5).
+    track('invitation_created', {
+      invitationId: invitation.id,
+      templateId: invitation.templateId,
+      themeId: invitation.themeId,
+    });
     return Response.json(invitation, { status: 201 });
   } catch (error) {
     return invitationErrorToResponse(error);

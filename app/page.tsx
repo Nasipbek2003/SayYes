@@ -6,6 +6,7 @@
 import Link from 'next/link';
 import { buildGallery } from '@/lib/gallery/gallery';
 import { HowItWorksDemo } from './components/HowItWorksDemo';
+import { PhoneVideo } from './components/PhoneVideo';
 import { TemplateGalleryCard } from './components/TemplateGalleryCard';
 import {
   BenefitIconLink,
@@ -36,7 +37,8 @@ export default function HomePage() {
         <div className={styles.heroContent}>
           <span className={styles.badge}>Сервис интерактивных приглашений</span>
           <h1 className={styles.heroTitle}>
-            Создай персональное<br />приглашение за 5 минут
+            Создай персональное<br />
+            <span className={styles.heroTitleScript}>приглашение</span> за 5 минут
           </h1>
           <p className={styles.heroSubtitle}>
             Выбери шаблон, впиши данные и получи уникальную ссылку.
@@ -50,16 +52,28 @@ export default function HomePage() {
               Как это работает
             </Link>
           </div>
+          {/* Social proof — триггеры доверия над линией сгиба */}
+          <ul className={styles.trustRow}>
+            <li className={styles.trustItem}>
+              <strong className={styles.trustNum}>5 мин</strong>
+              <span className={styles.trustLabel}>на создание</span>
+            </li>
+            <li className={styles.trustDivider} aria-hidden="true" />
+            <li className={styles.trustItem}>
+              <strong className={styles.trustNum}>14</strong>
+              <span className={styles.trustLabel}>живых сценариев</span>
+            </li>
+            <li className={styles.trustDivider} aria-hidden="true" />
+            <li className={styles.trustItem}>
+              <strong className={styles.trustNum}>Telegram</strong>
+              <span className={styles.trustLabel}>ответы онлайн</span>
+            </li>
+          </ul>
         </div>
         <div className={styles.heroVisual}>
           <div className={styles.phoneMock}>
             <div className={styles.phoneMockInner}>
-              <div className={styles.phoneMockScreen}>
-                <div className={styles.mockHeart}><HeroHeart /></div>
-                <p className={styles.mockText}>Привет, Айя!</p>
-                <p className={styles.mockSubtext}>У меня для тебя кое-что есть...</p>
-                <button className={styles.mockBtn}>Открыть →</button>
-              </div>
+              <PhoneVideo />
             </div>
           </div>
           {/* Декоративные иконки */}

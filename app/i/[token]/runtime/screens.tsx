@@ -25,6 +25,7 @@ import type { ScreenElement, ScreenKind, ScreenSchema } from '@/templates/types'
 import { substitute } from './controller';
 import { Confetti, Countdown, FloatingHearts, RunawayButton, resolveNoBehavior } from './animations';
 import { StickerMedia } from '@/app/components/StickerMedia';
+import { TiltCard } from './TiltCard';
 import {
   buildRsvpPayload,
   buildSelectionPayload,
@@ -72,6 +73,7 @@ const SHARED_INVITE_TEMPLATES = new Set([
   'boarding',
   'quest',
   'time-machine',
+  'tilt-card',
 ]);
 
 /** Props shared by every screen component. */
@@ -949,6 +951,31 @@ function RecipeIntro({ screen, vars, onAction }: ScreenProps): ReactNode {
   );
 }
 
+/**
+ * Шаблон «tilt-card» — экран 1 «Наклони телефон». Голографическая 3D-карточка
+ * ({@link TiltCard}): гироскоп (с graceful fallback на мышь/палец) двигает
+ * блеск по поверхности; поймал блеск в центре — карточка «раскрывается» и
+ * сценарий переходит к приглашению.
+ */
+function TiltCardIntro({ screen, vars, onAction }: ScreenProps): ReactNode {
+  const heading = screen.elements.find((el) => el.kind === 'heading');
+  const image = screen.elements.find((el) => el.kind === 'image');
+  const button = screen.elements.find((el) => el.kind === 'button');
+  const action = button?.action ?? 'click:open';
+  const headingText = substitute(heading?.text, vars);
+  const imgSrc = substitute(image?.src, vars);
+
+  return (
+    <ScreenShell kind="intro" screenId={screen.id}>
+      <TiltCard
+        photo={imgSrc}
+        heading={headingText}
+        onCaught={() => onAction(action)}
+      />
+    </ScreenShell>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    Тематические компоненты многоэкранных шаблонов (ex-message, interrogation,
    tinder-story, breaking-news, horoscope, boarding, time-machine).
@@ -1730,6 +1757,7 @@ function IntroScreen(props: ScreenProps): ReactNode {
   if (props.templateId === 'movie-poster') return MoviePosterIntro(props);
   if (props.templateId === 'wish-star') return WishStarIntro(props);
   if (props.templateId === 'recipe-date') return RecipeIntro(props);
+  if (props.templateId === 'tilt-card') return TiltCardIntro(props);
   if (isSimpleDate(props.templateId)) return SimpleDateIntro(props);
   if (isEventRsvp(props.templateId)) return EventRsvpCover(props);
   return (

@@ -32,6 +32,7 @@ import { horoscope } from './horoscope';
 import { boarding } from './boarding';
 import { quest } from './quest';
 import { timeMachine } from './time-machine';
+import { tiltCard } from './tilt-card';
 import { eventRsvp } from './event-rsvp';
 import { simpleDate } from './simple-date';
 import { storyFork } from './story-fork';
@@ -53,6 +54,7 @@ const galleryTemplates: TemplateSchema[] = [
   boarding,
   quest,
   timeMachine,
+  tiltCard,
 ];
 
 /** All schemas — used by the registry (lookup by id for existing invitations). */

@@ -12,6 +12,7 @@
  * library manages, so it can be dropped onto any screen.
  */
 import { useEffect } from 'react';
+import { useReducedMotion } from 'framer-motion';
 
 export interface ConfettiProps {
   /** Number of confetti particles per burst. */
@@ -24,7 +25,12 @@ export interface ConfettiProps {
 
 /** Fire a one-shot confetti celebration on mount. */
 export function Confetti({ particleCount = 120, bursts = 3, spread = 70 }: ConfettiProps) {
+  // Respect the OS "reduce motion" setting: skip the celebratory burst entirely
+  // for users who asked for less movement (accessibility / motion sensitivity).
+  const reduceMotion = useReducedMotion();
+
   useEffect(() => {
+    if (reduceMotion) return;
     let cancelled = false;
     const timers: ReturnType<typeof setTimeout>[] = [];
 
@@ -49,7 +55,7 @@ export function Confetti({ particleCount = 120, bursts = 3, spread = 70 }: Confe
       cancelled = true;
       timers.forEach(clearTimeout);
     };
-  }, [particleCount, bursts, spread]);
+  }, [particleCount, bursts, spread, reduceMotion]);
 
   // The confetti canvas is created/managed by the library; nothing to render.
   return null;

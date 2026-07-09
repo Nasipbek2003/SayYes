@@ -17,6 +17,7 @@
  */
 import { authErrorToResponse } from '@/lib/auth';
 import { requireAuthor } from '@/lib/auth/nextCookies';
+import { track } from '@/lib/analytics';
 import {
   PaymentServiceError,
   paymentService,
@@ -59,6 +60,8 @@ export async function POST(
 
   try {
     const checkoutUrl = await paymentService.startCheckout(id, authorId, tier);
+    // Funnel: author reached checkout (conversion analytics, gap #5).
+    track('checkout_started', { invitationId: id, tier });
     return Response.json({ checkoutUrl }, { status: 200 });
   } catch (error) {
     return paymentErrorToResponse(error);

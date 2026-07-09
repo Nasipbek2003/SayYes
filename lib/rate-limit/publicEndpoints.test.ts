@@ -37,9 +37,13 @@ describe('rateLimitKey', () => {
 });
 
 describe('enforcePublicRateLimit', () => {
-  it('allows requests under the limit (no 429 response)', () => {
+  it('allows requests under the limit (no 429 response)', async () => {
     const headers = new Headers({ 'x-forwarded-for': '203.0.113.50' });
-    const { result, response } = enforcePublicRateLimit('respond', 'tok-allow', headers);
+    const { result, response } = await enforcePublicRateLimit(
+      'respond',
+      'tok-allow',
+      headers,
+    );
     expect(result.allowed).toBe(true);
     expect(response).toBeNull();
   });
@@ -51,11 +55,11 @@ describe('enforcePublicRateLimit', () => {
 
     // Exhaust the respond budget for this unique token+IP.
     for (let i = 0; i < PUBLIC_RATE_LIMITS.respond.limit; i++) {
-      const { response } = enforcePublicRateLimit('respond', token, headers);
+      const { response } = await enforcePublicRateLimit('respond', token, headers);
       expect(response).toBeNull();
     }
 
-    const { result, response } = enforcePublicRateLimit('respond', token, headers);
+    const { result, response } = await enforcePublicRateLimit('respond', token, headers);
     expect(result.allowed).toBe(false);
     expect(response).not.toBeNull();
     expect(response!.status).toBe(429);
@@ -63,13 +67,13 @@ describe('enforcePublicRateLimit', () => {
     await expect(response!.json()).resolves.toMatchObject({ reason: 'rate_limited' });
   });
 
-  it('keeps separate budgets per IP for the same token', () => {
+  it('keeps separate budgets per IP for the same token', async () => {
     const token = 'tok-shared';
     // Exhaust IP A.
     for (let i = 0; i < PUBLIC_RATE_LIMITS.open.limit; i++) {
-      enforcePublicRateLimit('open', token, new Headers({ 'x-forwarded-for': '10.1.1.1' }));
+      await enforcePublicRateLimit('open', token, new Headers({ 'x-forwarded-for': '10.1.1.1' }));
     }
-    const blockedA = enforcePublicRateLimit(
+    const blockedA = await enforcePublicRateLimit(
       'open',
       token,
       new Headers({ 'x-forwarded-for': '10.1.1.1' }),
@@ -77,7 +81,7 @@ describe('enforcePublicRateLimit', () => {
     expect(blockedA.response).not.toBeNull();
 
     // A different IP still has its full budget for the same token.
-    const freshB = enforcePublicRateLimit(
+    const freshB = await enforcePublicRateLimit(
       'open',
       token,
       new Headers({ 'x-forwarded-for': '10.2.2.2' }),

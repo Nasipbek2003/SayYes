@@ -22,6 +22,7 @@ import { getPaymentProvider } from '@/lib/payments/provider';
 import { WebhookVerificationError } from '@/lib/payments/provider';
 import { paymentService } from '@/lib/services/payment';
 import { logger } from '@/lib/logger';
+import { track } from '@/lib/analytics';
 
 export const runtime = 'nodejs';
 
@@ -42,6 +43,12 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   logger.info('webhook-event-received', { sessionId: event.sessionId, status: event.status });
+
+  // Funnel: payment outcome (conversion analytics, gap #5) — the key "will
+  // people pay" milestone.
+  track(event.status === 'succeeded' ? 'payment_succeeded' : 'payment_failed', {
+    sessionId: event.sessionId,
+  });
 
   // 2) Apply the event idempotently (success → activate, fail → keep draft).
   const result = await paymentService.handleWebhook(event);

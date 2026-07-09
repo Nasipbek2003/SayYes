@@ -26,6 +26,7 @@ import {
 } from '@/lib/services/invitation';
 import { outboxWorker } from '@/lib/notifications/outboxWorker';
 import { logger } from '@/lib/logger';
+import { track } from '@/lib/analytics';
 
 export const runtime = 'nodejs';
 
@@ -37,7 +38,7 @@ export async function POST(
 
   // Public, unauthenticated endpoint — throttle abuse per token + client IP
   // (task 11.2). A 429 is handled gracefully by the runtime client (Req 4.4).
-  const { response: limited } = enforcePublicRateLimit(
+  const { response: limited } = await enforcePublicRateLimit(
     'open',
     token,
     _request.headers,
@@ -48,6 +49,9 @@ export async function POST(
 
   try {
     const { firstOpen } = await invitationService.recordOpen(token, userAgent);
+
+    // Funnel: count the first open of a link (conversion analytics, gap #5).
+    if (firstOpen) track('invitation_opened', { token });
 
     // Best-effort immediate delivery of the just-enqueued notification (only
     // the first open enqueues one). Never fail the public request on a delivery
