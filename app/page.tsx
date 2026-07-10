@@ -4,6 +4,7 @@
  * как это работает, каталог шаблонов, фичи, FAQ, футер-CTA.
  */
 import Link from 'next/link';
+import { Check, LayoutTemplate, ArrowRight } from 'lucide-react';
 import { buildGallery } from '@/lib/gallery/gallery';
 import { HowItWorksDemo } from './components/HowItWorksDemo';
 import { PhoneVideo } from './components/PhoneVideo';
@@ -18,7 +19,6 @@ import {
   FeatureIconTelegram,
   FeatureIconMobile,
   FeatureIconPreview,
-  HeroHeart,
   HeroSparkle,
   FinalCtaIcon,
   FooterLogoIcon,
@@ -31,28 +31,26 @@ export default function HomePage() {
   return (
     <>
       {/* ══════════════════════════════════════════
-          1. HERO
+          1. HERO — асимметричный сплит, инлайн-акцент в заголовке
       ══════════════════════════════════════════ */}
       <section className={styles.hero}>
         <div className={styles.heroContent}>
           <span className={styles.badge}>Сервис интерактивных приглашений</span>
           <h1 className={styles.heroTitle}>
-            Создай персональное<br />
-            <span className={styles.heroTitleScript}>приглашение</span> за 5 минут
+            Создай личное<br />
+            <span className={styles.heroTitleScript}>приглашение</span>,
+            <br />не просто ссылку
           </h1>
           <p className={styles.heroSubtitle}>
-            Выбери шаблон, впиши данные и получи уникальную ссылку.
+            Выбери сценарий, впиши данные и получи уникальную ссылку.
             Адресат откроет её в мессенджере и ответит прямо внутри.
           </p>
           <div className={styles.heroCtas}>
             <Link href="/#catalog" className={styles.ctaPrimary}>
               Выбрать шаблон
             </Link>
-            <Link href="/#how" className={styles.ctaSecondary}>
-              Как это работает
-            </Link>
           </div>
-          {/* Social proof — триггеры доверия над линией сгиба */}
+          {/* Social proof — реальные цифры из движка, без выдуманных метрик */}
           <ul className={styles.trustRow}>
             <li className={styles.trustItem}>
               <strong className={styles.trustNum}>5 мин</strong>
@@ -60,7 +58,7 @@ export default function HomePage() {
             </li>
             <li className={styles.trustDivider} aria-hidden="true" />
             <li className={styles.trustItem}>
-              <strong className={styles.trustNum}>14</strong>
+              <strong className={styles.trustNum}>{templates.length}</strong>
               <span className={styles.trustLabel}>живых сценариев</span>
             </li>
             <li className={styles.trustDivider} aria-hidden="true" />
@@ -76,30 +74,35 @@ export default function HomePage() {
               <PhoneVideo />
             </div>
           </div>
-          {/* Декоративные иконки */}
-          <span className={styles.deco1}><HeroSparkle /></span>
-          <span className={styles.deco2}><HeroHeart /></span>
-          <span className={styles.deco3}><HeroSparkle /></span>
+          {/* Тонкий декоративный акцент — статичный, не мигающие эмодзи */}
+          <span className={styles.deco1} aria-hidden="true"><HeroSparkle /></span>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════
-          2. ПРЕИМУЩЕСТВА
+          2. ПРЕИМУЩЕСТВА — асимметричный bento, не 3 равные карточки
       ══════════════════════════════════════════ */}
       <section className={styles.benefits}>
         <div className={styles.container}>
           <div className={styles.benefitsGrid}>
-            {[
-              { icon: <BenefitIconLink />, title: 'Одна ссылка — все гости', desc: 'Создаёшь раз, отправляешь сколько угодно. Никаких конвертов и курьеров.' },
-              { icon: <BenefitIconTarget />, title: 'Уникальный опыт', desc: 'Интерактивный сценарий с анимациями — адресат почувствует заботу ещё до встречи.' },
-              { icon: <BenefitIconNotify />, title: 'Ответы в Telegram', desc: 'Узнаешь кто открыл, кто согласился и какое место выбрал — сразу в уведомлении.' },
-            ].map(({ icon, title, desc }) => (
-              <div key={title} className={styles.benefitCard}>
-                <span className={styles.benefitIcon}>{icon}</span>
-                <h3 className={styles.benefitTitle}>{title}</h3>
-                <p className={styles.benefitDesc}>{desc}</p>
-              </div>
-            ))}
+            <div className={`${styles.benefitCard} ${styles.benefitCardLead}`}>
+              <span className={styles.benefitIcon}><BenefitIconTarget /></span>
+              <h3 className={styles.benefitTitle}>Уникальный опыт</h3>
+              <p className={styles.benefitDesc}>
+                Интерактивный сценарий с анимациями и развилками — адресат
+                почувствует заботу ещё до встречи, а не просто прочитает текст.
+              </p>
+            </div>
+            <div className={styles.benefitCard}>
+              <span className={styles.benefitIcon}><BenefitIconLink /></span>
+              <h3 className={styles.benefitTitle}>Одна ссылка — все гости</h3>
+              <p className={styles.benefitDesc}>Создаёшь раз, отправляешь сколько угодно.</p>
+            </div>
+            <div className={styles.benefitCard}>
+              <span className={styles.benefitIcon}><BenefitIconNotify /></span>
+              <h3 className={styles.benefitTitle}>Ответы в Telegram</h3>
+              <p className={styles.benefitDesc}>Узнаешь кто открыл, кто согласился и какое место выбрал.</p>
+            </div>
           </div>
         </div>
       </section>
@@ -148,7 +151,7 @@ export default function HomePage() {
 
           {templates.length === 0 ? (
             <div className={styles.empty}>
-              <span className={styles.emptyEmoji}>🗂️</span>
+              <span className={styles.emptyIcon} aria-hidden="true"><LayoutTemplate size={40} strokeWidth={1.6} /></span>
               <h3 className={styles.emptyTitle}>Шаблоны скоро появятся</h3>
               <p className={styles.emptyText}>Мы готовим новые сценарии. Загляни чуть позже.</p>
             </div>
@@ -217,7 +220,7 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════
           6. ТАРИФЫ
       ══════════════════════════════════════════ */}
-      <section className={styles.pricing}>
+      <section className={styles.pricing} id="pricing">
         <div className={styles.container}>
           <h2 className={styles.sectionTitle}>Стоимость</h2>
           <p className={styles.sectionSubtitle}>Разовая оплата за каждое приглашение</p>
@@ -226,10 +229,10 @@ export default function HomePage() {
               <h3 className={styles.planName}>Базовый</h3>
               <div className={styles.planPrice}>990 <span>сом</span></div>
               <ul className={styles.planFeatures}>
-                <li>✓ Интерактивный сценарий</li>
-                <li>✓ Уникальная ссылка</li>
-                <li>✓ Красивое превью в мессенджерах</li>
-                <li>✓ Уведомления автору</li>
+                <li><Check size={15} strokeWidth={2.2} /> Интерактивный сценарий</li>
+                <li><Check size={15} strokeWidth={2.2} /> Уникальная ссылка</li>
+                <li><Check size={15} strokeWidth={2.2} /> Красивое превью в мессенджерах</li>
+                <li><Check size={15} strokeWidth={2.2} /> Уведомления автору</li>
                 <li className={styles.planMuted}>— Подпись SayYes внизу</li>
               </ul>
               <Link href="/#catalog" className={styles.planCta}>Выбрать шаблон</Link>
@@ -239,11 +242,11 @@ export default function HomePage() {
               <h3 className={styles.planName}>Премиум</h3>
               <div className={styles.planPrice}>1 990 <span>сом</span></div>
               <ul className={styles.planFeatures}>
-                <li>✓ Всё из базового</li>
-                <li>✓ Без подписи бренда</li>
-                <li>✓ Расширенные анимации</li>
-                <li>✓ Фоновая музыка</li>
-                <li>✓ Приоритетная поддержка</li>
+                <li><Check size={15} strokeWidth={2.2} /> Всё из базового</li>
+                <li><Check size={15} strokeWidth={2.2} /> Без подписи бренда</li>
+                <li><Check size={15} strokeWidth={2.2} /> Расширенные анимации</li>
+                <li><Check size={15} strokeWidth={2.2} /> Фоновая музыка</li>
+                <li><Check size={15} strokeWidth={2.2} /> Приоритетная поддержка</li>
               </ul>
               <Link href="/#catalog" className={styles.planCta}>Выбрать шаблон</Link>
             </div>
@@ -254,7 +257,7 @@ export default function HomePage() {
       {/* ══════════════════════════════════════════
           7. FAQ
       ══════════════════════════════════════════ */}
-      <section className={styles.faq}>
+      <section className={styles.faq} id="faq">
         <div className={styles.container}>
           <h2 className={styles.sectionTitle}>Вопрос — ответ</h2>
           <div className={styles.faqList}>
@@ -280,13 +283,13 @@ export default function HomePage() {
       <section className={styles.finalCta}>
         <div className={styles.container}>
           <div className={styles.finalCtaInner}>
-            <span className={styles.finalCtaEmoji}><FinalCtaIcon /></span>
+            <span className={styles.finalCtaIcon} aria-hidden="true"><FinalCtaIcon /></span>
             <h2 className={styles.finalCtaTitle}>Создай своё первое приглашение</h2>
             <p className={styles.finalCtaSubtitle}>
               Выбери шаблон, заполни данные — ссылка будет готова за 5 минут
             </p>
             <Link href="/#catalog" className={styles.ctaPrimary}>
-              Начать бесплатно
+              Начать бесплатно <ArrowRight size={16} strokeWidth={2.2} />
             </Link>
           </div>
         </div>
@@ -341,7 +344,7 @@ export default function HomePage() {
 
           {/* Нижняя строка: копирайт + юридические ссылки */}
           <div className={styles.footerBottom}>
-            <p className={styles.footerCopy}>© 2025 SayYes. Все права защищены.</p>
+            <p className={styles.footerCopy}>© {new Date().getFullYear()} SayYes. Все права защищены.</p>
             <div className={styles.footerLegal}>
               <Link href="/legal/privacy">Политика конфиденциальности</Link>
               <Link href="/legal/terms">Условия использования</Link>

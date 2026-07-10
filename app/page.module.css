@@ -88,9 +88,9 @@
 
 .heroTitle {
   font-family: var(--font-serif);
-  font-size: 46px;
+  font-size: clamp(32px, 4.4vw, 50px);
   font-weight: 500;
-  line-height: 1.18;
+  line-height: 1.16;
   letter-spacing: -0.01em;
   color: var(--text);
   margin-bottom: 16px;
@@ -131,7 +131,9 @@
 }
 
 .ctaPrimary {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   background: var(--accent);
   color: var(--text-on-cta);
   font-size: 14px;
@@ -407,57 +409,20 @@
   border: 1.5px solid var(--border);
 }
 
-.mockHeart {
-  font-size: 56px;
-  line-height: 1;
-  animation: pulse 2s ease-in-out infinite;
-}
-
 @keyframes pulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.1); }
 }
 
-.mockText {
-  font-family: var(--font-serif);
-  font-size: 17px;
-  font-weight: 400;
-  color: var(--text);
-  text-align: center;
-}
-
-.mockSubtext {
-  font-size: 12px;
-  color: var(--text-muted);
-  text-align: center;
-  line-height: 1.4;
-}
-
-.mockBtn {
-  appearance: none;
-  border: none;
-  background: var(--accent);
-  color: var(--text-on-cta);
-  font-size: 13px;
-  font-weight: 500;
-  padding: 10px 24px;
-  border-radius: 10px;
-  cursor: default;
-  animation: pulse 2s ease-in-out infinite;
-  animation-delay: 0.5s;
-}
-
-/* Декоративные эмодзи вокруг телефона */
-.deco1, .deco2, .deco3 {
+/* Единственный тонкий декоративный акцент возле телефона (без эмодзи) */
+.deco1 {
   position: absolute;
-  font-size: 24px;
-  animation: float 3s ease-in-out infinite;
+  top: 32px;
+  right: -18px;
+  animation: float 3.2s ease-in-out infinite;
   pointer-events: none;
+  opacity: 0.85;
 }
-
-.deco1 { top: 40px; right: -20px; animation-delay: 0s; }
-.deco2 { bottom: 60px; right: 20px; animation-delay: 1s; font-size: 18px; }
-.deco3 { top: 100px; left: -10px; animation-delay: 2s; font-size: 20px; }
 
 @keyframes float {
   0%, 100% { transform: translateY(0); }
@@ -472,14 +437,17 @@
   padding: 64px 0;
 }
 
+/* Bento-асимметрия: крупная карточка слева на всю высоту, две поменьше справа стопкой.
+   Осознанно не «3 равные карточки в ряд» — этот паттерн создаёт визуальную иерархию. */
 .benefitsGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 28px;
+  grid-template-columns: 1.3fr 1fr;
+  grid-template-rows: repeat(2, 1fr);
+  gap: 20px;
 }
 
 @media (max-width: 768px) {
-  .benefitsGrid { grid-template-columns: 1fr; }
+  .benefitsGrid { grid-template-columns: 1fr; grid-template-rows: none; }
 }
 
 .benefitCard {
@@ -492,6 +460,16 @@
   flex-direction: column;
   gap: 12px;
   transition: transform var(--dur) var(--ease-soft), box-shadow var(--dur) ease, border-color var(--dur) ease;
+}
+
+.benefitCardLead {
+  grid-row: 1 / 3;
+  justify-content: center;
+  padding: 36px 32px;
+}
+
+@media (max-width: 768px) {
+  .benefitCardLead { grid-row: auto; }
 }
 
 .benefitCard:hover {
@@ -814,10 +792,11 @@
   background: var(--card);
 }
 
-.emptyEmoji {
-  font-size: 48px;
-  line-height: 1;
-  display: block;
+.emptyIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-decor);
   margin-bottom: 16px;
 }
 
@@ -979,10 +958,21 @@
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   font-size: 13px;
   color: var(--text-muted);
   flex: 1;
+}
+
+.planFeatures li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.planFeatures li svg {
+  flex-shrink: 0;
+  color: var(--accent);
 }
 
 .planMuted {
@@ -1082,9 +1072,11 @@
   margin: 0 auto;
 }
 
-.finalCtaEmoji {
-  font-size: 48px;
-  line-height: 1;
+.finalCtaIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
 }
 
 .finalCtaTitle {
