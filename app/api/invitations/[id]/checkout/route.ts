@@ -17,6 +17,8 @@ import { authErrorToResponse } from '@/lib/auth';
 import { requireAuthor } from '@/lib/auth/nextCookies';
 import { track } from '@/lib/analytics';
 import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
+import { PaymentConfigError } from '@/lib/payments/provider';
 import { mockPaymentsEnabled } from '@/lib/payments/mockAccess';
 import { parsePlan } from '@/lib/pricing';
 import { PaymentServiceError, paymentService } from '@/lib/services/payment';
@@ -89,6 +91,15 @@ export async function POST(
 
 /** Map a {@link PaymentServiceError} (or auth error) to a JSON Response. */
 function paymentErrorToResponse(error: unknown): Response {
+  // Провайдер выбран, но не настроен (нет ключей) — это конфигурация, не баг.
+  if (error instanceof PaymentConfigError) {
+    logger.error('payments-misconfigured', { error: error.message });
+    return Response.json(
+      { error: 'Оплата пока не подключена. Попробуй позже.', code: 'payments_disabled' },
+      { status: 503 },
+    );
+  }
+
   if (error instanceof PaymentServiceError) {
     return Response.json(
       { error: error.message, code: error.code },

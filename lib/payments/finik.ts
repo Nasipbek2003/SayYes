@@ -20,6 +20,7 @@ import { logger } from '@/lib/logger';
 import { finikWebhookPublicKeyFor } from './finikPublicKeys';
 import { signRequest, verifyRequest, type FinikRequestData } from './finikSignature';
 import {
+  PaymentConfigError,
   WebhookVerificationError,
   type CheckoutParams,
   type CheckoutResult,
@@ -97,9 +98,15 @@ export class FinikPaymentProvider implements PaymentProvider {
   }
 
   async createCheckout(params: CheckoutParams): Promise<CheckoutResult> {
-    if (!this.apiKey || !this.privateKey || !this.accountId) {
-      throw new Error(
-        'Finik не настроен: нужны FINIK_API_KEY, FINIK_ACCOUNT_ID и FINIK_PRIVATE_KEY.',
+    const missing = [
+      !this.apiKey && 'FINIK_API_KEY',
+      !this.accountId && 'FINIK_ACCOUNT_ID',
+      !this.privateKey && 'FINIK_PRIVATE_KEY',
+    ].filter(Boolean);
+
+    if (missing.length > 0) {
+      throw new PaymentConfigError(
+        `Finik не настроен: не заданы ${missing.join(', ')}.`,
       );
     }
 

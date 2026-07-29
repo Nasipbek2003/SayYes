@@ -88,6 +88,18 @@ export class WebhookVerificationError extends Error {
 }
 
 /**
+ * Провайдер выбран, но не настроен (нет ключей/счёта). Это не ошибка автора и
+ * не баг: приём платежей просто не сконфигурирован, поэтому обработчики
+ * отвечают 503, а не 500.
+ */
+export class PaymentConfigError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'PaymentConfigError';
+  }
+}
+
+/**
  * Configurable in-memory provider for local development and tests.
  *
  * `createCheckout` mints a random session id and returns a local mock checkout
