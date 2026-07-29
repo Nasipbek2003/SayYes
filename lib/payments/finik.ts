@@ -179,8 +179,21 @@ export class FinikPaymentProvider implements PaymentProvider {
     const checkoutUrl = await readCheckoutUrl(res);
     if (!checkoutUrl) {
       const detail = await safeText(res);
-      logger.error('finik-create-payment-failed', { status: res.status, detail });
-      throw new Error(`Finik не вернул ссылку на оплату (HTTP ${res.status}).`);
+      logger.error('finik-create-payment-failed', {
+        status: res.status,
+        detail,
+        // Диагностика конфигурации (без секретов): по этим полям видно, что
+        // именно уехало в Finik с этого окружения.
+        baseUrl: this.baseUrl,
+        path: this.paymentPath,
+        amount: params.amount,
+        accountIdTail: this.accountId.slice(-6),
+        apiKeyLength: this.apiKey.length,
+        privateKeyLength: this.privateKey.length,
+      });
+      throw new Error(
+        `Finik не вернул ссылку на оплату (HTTP ${res.status}). ${detail}`.trim(),
+      );
     }
 
     return { checkoutUrl, sessionId };
