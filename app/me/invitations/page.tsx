@@ -3,20 +3,12 @@ import { redirect } from 'next/navigation';
 
 import { getCurrentAuthorId } from '@/lib/auth/nextCookies';
 import { invitationService } from '@/lib/services/invitation';
-import type { CabinetStatus } from '@/lib/services/invitation';
 
-import { CopyLinkButton, DeleteInvitationButton, DeleteAccountButton } from './CabinetActions';
-import { LocalTime } from '@/app/components/LocalTime';
+import { DeleteAccountButton } from './CabinetActions';
+import { InvitationsList } from './InvitationsList';
 import styles from './cabinet.module.css';
 
 export const dynamic = 'force-dynamic';
-
-const STATUS_LABEL: Record<CabinetStatus, string> = {
-  draft: 'Черновик',
-  active: 'Активно',
-  responded: 'Отвечено',
-  expired: 'Недоступно',
-};
 
 export default async function CabinetListPage() {
   const authorId = await getCurrentAuthorId();
@@ -46,60 +38,7 @@ export default async function CabinetListPage() {
           <Link href="/" className={styles.cta}>К галерее шаблонов</Link>
         </section>
       ) : (
-        <div className={styles.cardList}>
-          {invitations.map((item) => (
-            <div key={item.id} className={styles.card}>
-              {/* Заголовок карточки */}
-              <div className={styles.cardHeader}>
-                <div>
-                  <h2 className={styles.cardTitle}>{item.templateName}</h2>
-                  <span className={styles.cardDate}>
-                    Создано: <LocalTime date={item.createdAt} />
-                    {item.activatedAt && <> · Активировано: <LocalTime date={item.activatedAt} /></>}
-                  </span>
-                </div>
-                <span className={`${styles.badge} ${styles[`badge--${item.cabinetStatus}`]}`}>
-                  {STATUS_LABEL[item.cabinetStatus]}
-                </span>
-              </div>
-
-              {/* Ссылка с кнопкой копирования */}
-              {item.url ? (
-                <div className={styles.linkBlock}>
-                  <a href={item.url} className={styles.linkUrl} target="_blank" rel="noreferrer">
-                    {item.url}
-                  </a>
-                  <CopyLinkButton url={item.url} />
-                </div>
-              ) : (
-                <p className={styles.linkDraft}>Ссылка появится после создания приглашения.</p>
-              )}
-
-              {/* Статистика */}
-              <div className={styles.statsRow}>
-                <div className={styles.statBox}>
-                  <span className={styles.statNum}>{item.opens}</span>
-                  <span className={styles.statLabel}>Открытий</span>
-                </div>
-                <div className={styles.statBox}>
-                  <span className={styles.statNum}>{item.responses}</span>
-                  <span className={styles.statLabel}>Ответов</span>
-                </div>
-              </div>
-
-              {/* Действия */}
-              <div className={styles.cardActions}>
-                <Link
-                  href={`/me/invitations/${encodeURIComponent(item.id)}`}
-                  className={styles.detailLink}
-                >
-                  Подробнее →
-                </Link>
-                <DeleteInvitationButton invitationId={item.id} />
-              </div>
-            </div>
-          ))}
-        </div>
+        <InvitationsList invitations={invitations} />
       )}
 
       <div className={styles.dangerZone}>

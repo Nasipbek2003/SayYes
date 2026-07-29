@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { PLANS } from '@/lib/pricing';
+
 export const metadata = { title: 'Правила оплаты — SayYes' };
 
 export default function PaymentPage() {
@@ -11,13 +13,14 @@ export default function PaymentPage() {
 
       <section style={{ display: 'flex', flexDirection: 'column', gap: 20, fontSize: 15, lineHeight: 1.7 }}>
         <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 400 }}>Способы оплаты</h2>
-        <p style={{ color: 'var(--text-muted)' }}>Оплата производится банковской картой через защищённый платёжный шлюз. Данные карты не хранятся на наших серверах.</p>
+        <p style={{ color: 'var(--text-muted)' }}>Оплата проходит через платёжный сервис Finik: банковской картой или из любого финансового приложения Кыргызстана по QR. Данные карты не попадают на наши серверы — их обрабатывает Finik.</p>
 
         <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 400, marginTop: 8 }}>Тарифы</h2>
         <ul style={{ paddingLeft: 20, color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <li><strong style={{ color: 'var(--text)' }}>Базовый</strong> — 990 сом за одно приглашение</li>
-          <li><strong style={{ color: 'var(--text)' }}>Премиум</strong> — 1 990 сом за одно приглашение</li>
+          <li><strong style={{ color: 'var(--text)' }}>{PLANS.single.title}</strong> — {PLANS.single.amount} сом за одно приглашение</li>
+          <li><strong style={{ color: 'var(--text)' }}>{PLANS.monthly.title}</strong> — {PLANS.monthly.amount} сом за 30 дней, приглашения в это время публикуются без отдельной оплаты</li>
         </ul>
+        <p style={{ color: 'var(--text-muted)' }}>Подписка не продлевается автоматически: по истечении 30 дней её нужно оплатить заново.</p>
 
         <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 400, marginTop: 8 }}>Возврат</h2>
         <p style={{ color: 'var(--text-muted)' }}>После успешной активации ссылки (получения уникального URL) оплата возврату не подлежит. Если активация не произошла по техническим причинам на нашей стороне — обратитесь в поддержку.</p>

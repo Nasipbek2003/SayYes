@@ -33,6 +33,7 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@mancho.devs/authorizer": "2.12.8",
     "@types/canvas-confetti": "^1.6.4",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.18",

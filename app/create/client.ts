@@ -16,7 +16,7 @@
  * `/login` (creating an invitation is an author operation — see the create page
  * docs).
  */
-import type { CheckoutTier } from '@/lib/services/payment';
+import type { PlanId } from '@/lib/pricing';
 import type { PreviewPayload } from '@/lib/services/invitation';
 
 /** Thrown when an author API call returns 401 (no/expired session). */
@@ -127,21 +127,35 @@ export async function fetchPreview(
   return parseJson<PreviewPayload>(res);
 }
 
-/** Start checkout for the chosen tier, returning the hosted URL (Req 3.1). */
+/** Результат старта оплаты: ссылка на платёжную страницу либо готовая публикация. */
+export interface CheckoutStarted {
+  checkoutUrl?: string;
+  sessionId?: string;
+  /** true, когда у автора активна подписка и платить не нужно. */
+  activated?: boolean;
+  url?: string;
+  token?: string;
+}
+
+/**
+ * Стартует оплату выбранного плана (`single` — 100 сом, `monthly` — 300 сом).
+ * Возвращает либо `checkoutUrl` платёжной страницы, либо `{ activated, url }`,
+ * если приглашение опубликовано по активной подписке.
+ */
 export async function startCheckout(
   id: string,
-  tier: CheckoutTier,
+  plan: PlanId,
   fetchImpl: typeof fetch = fetch,
-): Promise<{ checkoutUrl: string }> {
+): Promise<CheckoutStarted> {
   const res = await fetchImpl(
     `/api/invitations/${encodeURIComponent(id)}/checkout`,
     {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ tier }),
+      body: JSON.stringify({ plan }),
     },
   );
-  return parseJson<{ checkoutUrl: string }>(res);
+  return parseJson<CheckoutStarted>(res);
 }
 
 /** Dev-only: activate a draft without payment. */

@@ -42,7 +42,12 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: 'Webhook verification failed' }, { status: 400 });
   }
 
-  logger.info('webhook-event-received', { sessionId: event.sessionId, status: event.status });
+  logger.info('webhook-event-received', {
+    provider: provider.name,
+    sessionId: event.sessionId,
+    status: event.status,
+    externalId: event.externalId,
+  });
 
   // Funnel: payment outcome (conversion analytics, gap #5) — the key "will
   // people pay" milestone.

@@ -8,6 +8,7 @@ export * as invitationRepo from './invitations';
 export * as responseRepo from './responses';
 export * as openEventRepo from './openEvents';
 export * as paymentRepo from './payments';
+export * as subscriptionRepo from './subscriptions';
 export * as outboxRepo from './notificationOutbox';
 export * as authorRepo from './authors';
 export * as magicLinkRepo from './magicLinks';

@@ -1,11 +1,13 @@
 /**
  * POST /api/invitations/:id/dev-activate
  *
- * Activates a draft invitation without payment (free activation while
- * payments are not yet integrated).
+ * Активирует черновик без оплаты — только для локальной разработки
+ * (`NODE_ENV !== production` и `PAYMENT_PROVIDER=mock`). В остальных случаях
+ * отвечает 404: публикация идёт через оплату (Finik) или активную подписку.
  */
 import { authErrorToResponse } from '@/lib/auth';
 import { requireAuthor } from '@/lib/auth/nextCookies';
+import { env } from '@/lib/env';
 import { invitationRepo } from '@/lib/repositories';
 import { invitationService, InvitationServiceError } from '@/lib/services/invitation';
 
@@ -15,6 +17,12 @@ export async function POST(
   _request: Request,
   context: { params: Promise<{ id: string }> },
 ): Promise<Response> {
+  // Бесплатная активация допустима только локально: с подключённым эквайрингом
+  // (Finik) публикация возможна лишь после успешной оплаты или по подписке.
+  if (env.nodeEnv === 'production' || env.payment.provider !== 'mock') {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+
   let authorId: string;
   try {
     authorId = await requireAuthor();

@@ -25,16 +25,17 @@ describe('MockPaymentProvider.createCheckout', () => {
   it('returns a checkout URL under the configured app origin and a unique session id', async () => {
     const provider = new MockPaymentProvider({ appUrl: 'https://app.test' });
 
-    const a = await provider.createCheckout({
+    const params = {
       invitationId: 'inv-1',
-      tier: 'BASIC',
-      amount: 990,
-    });
-    const b = await provider.createCheckout({
-      invitationId: 'inv-1',
-      tier: 'BASIC',
-      amount: 990,
-    });
+      authorId: 'author-1',
+      plan: 'single' as const,
+      tier: 'PREMIUM' as const,
+      amount: 100,
+      currency: 'KGS',
+    };
+
+    const a = await provider.createCheckout(params);
+    const b = await provider.createCheckout(params);
 
     expect(a.checkoutUrl).toContain('https://app.test/mock-checkout/');
     expect(a.checkoutUrl).toContain(a.sessionId);

@@ -2,37 +2,45 @@
  * Payment provider abstraction (task 5.1).
  *
  * The domain layer talks to payments through the {@link PaymentProvider}
- * interface only, so the concrete acquirer (Stripe, a local acquirer, …) can be
- * swapped without touching {@link PaymentService} or the Route Handlers. For the
- * MVP we ship a configurable {@link MockPaymentProvider} that fabricates a
- * checkout session locally; real providers plug in later via environment keys
- * (`PAYMENT_PROVIDER`, `PAYMENT_API_KEY`, `PAYMENT_WEBHOOK_SECRET`).
+ * interface only, so the concrete acquirer can be swapped without touching
+ * {@link PaymentService} or the Route Handlers. Two adapters ship today:
+ *  - {@link FinikPaymentProvider} — реальный эквайринг Finik (KGS), см.
+ *    `lib/payments/finik.ts`;
+ *  - {@link MockPaymentProvider} — локальная заглушка для разработки и тестов.
  *
  * Two responsibilities live behind the interface:
  *  - `createCheckout` — start a hosted checkout session and hand back the URL
  *    the author is redirected to, plus the provider `sessionId` we persist on
  *    the `Payment` row (used later for idempotent webhook handling, Property 2).
  *  - `verifyWebhook` — verify the provider's signed callback and normalise it
- *    into a {@link PaymentEvent}. Implemented here so the abstraction is
- *    complete; the activation flow that consumes it is task 5.2.
+ *    into a {@link PaymentEvent}.
  */
 import { randomUUID } from 'node:crypto';
 
 import type { Tier } from '@prisma/client';
 
 import { env } from '@/lib/env';
+import type { PlanId } from '@/lib/pricing';
+
+import { FinikPaymentProvider } from './finik';
 
 /** Parameters required to open a hosted checkout session. */
 export interface CheckoutParams {
-  /** Invitation the payment is for (echoed back in the webhook metadata). */
-  invitationId: string;
-  /** Selected tier — drives the amount and the activated invitation's features. */
+  /** Invitation the payment is for — отсутствует у «чистой» подписки. */
+  invitationId?: string;
+  /** Автор-плательщик (попадает в метаданные платежа). */
+  authorId: string;
+  /** Выбранный тариф: разовая оплата или подписка на месяц. */
+  plan: PlanId;
+  /** Tier, который получит приглашение после оплаты. */
   tier: Tier;
-  /** Charge amount in the smallest currency unit (e.g. tiyin/cents). */
+  /** Сумма списания в целых сомах (Finik принимает `Amount` в сомах). */
   amount: number;
   /** ISO-4217 currency code. Defaults to the provider's configured currency. */
   currency?: string;
-  /** Where the provider sends the author after a successful payment. */
+  /** Описание платежа, показывается плательщику. */
+  description?: string;
+  /** Куда провайдер вернёт плательщика после успешной оплаты. */
   successUrl?: string;
   /** Where the provider sends the author after a cancelled payment. */
   cancelUrl?: string;
@@ -54,6 +62,8 @@ export interface PaymentEvent {
   status: 'succeeded' | 'failed';
   /** Provider event id, when present — supports idempotent processing. */
   eventId?: string;
+  /** Идентификатор транзакции у провайдера (пишем в `Payment.externalId`). */
+  externalId?: string;
 }
 
 /**
@@ -61,7 +71,7 @@ export interface PaymentEvent {
  * domain only needs to start a checkout and verify webhooks.
  */
 export interface PaymentProvider {
-  /** Provider identifier persisted on the `Payment` row (e.g. "mock", "stripe"). */
+  /** Provider identifier persisted on the `Payment` row (e.g. "mock", "finik"). */
   readonly name: string;
   /** Open a hosted checkout session for the given parameters. */
   createCheckout(params: CheckoutParams): Promise<CheckoutResult>;
@@ -78,7 +88,7 @@ export class WebhookVerificationError extends Error {
 }
 
 /**
- * Configurable in-memory provider for the MVP and tests.
+ * Configurable in-memory provider for local development and tests.
  *
  * `createCheckout` mints a random session id and returns a local mock checkout
  * URL (under the app's own origin) so the end-to-end flow works without an
@@ -101,7 +111,10 @@ export class MockPaymentProvider implements PaymentProvider {
   async createCheckout(params: CheckoutParams): Promise<CheckoutResult> {
     const sessionId = `mock_${randomUUID()}`;
     const base = (this.options.appUrl ?? env.appUrl).replace(/\/$/, '');
-    const checkoutUrl = `${base}/mock-checkout/${sessionId}`;
+    const query = params.successUrl
+      ? `?next=${encodeURIComponent(params.successUrl)}`
+      : '';
+    const checkoutUrl = `${base}/mock-checkout/${sessionId}${query}`;
     return { checkoutUrl, sessionId };
   }
 
@@ -140,12 +153,14 @@ export class MockPaymentProvider implements PaymentProvider {
 }
 
 /**
- * Resolve the configured {@link PaymentProvider}. Defaults to the mock provider
- * for the MVP; real providers are added here keyed by `PAYMENT_PROVIDER` once
- * their credentials are wired through the environment.
+ * Resolve the configured {@link PaymentProvider}, keyed by `PAYMENT_PROVIDER`.
+ * Defaults to the mock provider so local development works without acquirer
+ * credentials.
  */
 export function getPaymentProvider(): PaymentProvider {
   switch (env.payment.provider) {
+    case 'finik':
+      return new FinikPaymentProvider();
     case 'mock':
     default:
       return new MockPaymentProvider();

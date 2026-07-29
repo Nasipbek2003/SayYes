@@ -1,0 +1,113 @@
+/* Страницы оплаты — дизайн «Тёплый персик» */
+
+.page {
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  background: var(--bg);
+}
+
+.card {
+  width: 100%;
+  max-width: 440px;
+  padding: 32px 28px;
+  border-radius: var(--radius-card);
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.amount {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--accent);
+}
+
+/* Индикатор ожидания подтверждения */
+.spinner {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid var(--bg-secondary);
+  border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 3s;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.primary {
+  appearance: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 11px 22px;
+  border-radius: var(--radius-btn);
+  border: 1.5px solid var(--accent);
+  background: var(--accent);
+  color: var(--text-on-cta);
+  text-decoration: none;
+}
+
+.secondary {
+  appearance: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 11px 22px;
+  border-radius: var(--radius-btn);
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.error {
+  font-size: 13px;
+  color: var(--accent);
+}

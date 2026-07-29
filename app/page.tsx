@@ -6,6 +6,7 @@
 import Link from 'next/link';
 import { Check, LayoutTemplate, ArrowRight } from 'lucide-react';
 import { buildGallery } from '@/lib/gallery/gallery';
+import { PLANS } from '@/lib/pricing';
 import { HowItWorksDemo } from './components/HowItWorksDemo';
 import { PhoneVideo } from './components/PhoneVideo';
 import { TemplateGalleryCard } from './components/TemplateGalleryCard';
@@ -223,34 +224,41 @@ export default function HomePage() {
       <section className={styles.pricing} id="pricing">
         <div className={styles.container}>
           <h2 className={styles.sectionTitle}>Стоимость</h2>
-          <p className={styles.sectionSubtitle}>Разовая оплата за каждое приглашение</p>
+          <p className={styles.sectionSubtitle}>
+            Разовая оплата за приглашение или подписка на месяц
+          </p>
           <div className={styles.pricingGrid}>
             <div className={styles.pricingCard}>
-              <h3 className={styles.planName}>Базовый</h3>
-              <div className={styles.planPrice}>990 <span>сом</span></div>
+              <h3 className={styles.planName}>{PLANS.single.title}</h3>
+              <div className={styles.planPrice}>{PLANS.single.amount} <span>сом</span></div>
               <ul className={styles.planFeatures}>
+                <li><Check size={15} strokeWidth={2.2} /> Одно приглашение</li>
                 <li><Check size={15} strokeWidth={2.2} /> Интерактивный сценарий</li>
                 <li><Check size={15} strokeWidth={2.2} /> Уникальная ссылка</li>
                 <li><Check size={15} strokeWidth={2.2} /> Красивое превью в мессенджерах</li>
                 <li><Check size={15} strokeWidth={2.2} /> Уведомления автору</li>
-                <li className={styles.planMuted}>— Подпись SayYes внизу</li>
               </ul>
               <Link href="/#catalog" className={styles.planCta}>Выбрать шаблон</Link>
             </div>
             <div className={`${styles.pricingCard} ${styles['pricingCard--featured']}`}>
-              <span className={styles.planBadge}>Популярный</span>
-              <h3 className={styles.planName}>Премиум</h3>
-              <div className={styles.planPrice}>1 990 <span>сом</span></div>
+              <span className={styles.planBadge}>Выгодно от 3 приглашений</span>
+              <h3 className={styles.planName}>{PLANS.monthly.title}</h3>
+              <div className={styles.planPrice}>
+                {PLANS.monthly.amount} <span>сом / месяц</span>
+              </div>
               <ul className={styles.planFeatures}>
-                <li><Check size={15} strokeWidth={2.2} /> Всё из базового</li>
+                <li><Check size={15} strokeWidth={2.2} /> Сколько угодно приглашений</li>
+                <li><Check size={15} strokeWidth={2.2} /> 30 дней доступа</li>
+                <li><Check size={15} strokeWidth={2.2} /> Все функции шаблонов</li>
                 <li><Check size={15} strokeWidth={2.2} /> Без подписи бренда</li>
-                <li><Check size={15} strokeWidth={2.2} /> Расширенные анимации</li>
-                <li><Check size={15} strokeWidth={2.2} /> Фоновая музыка</li>
                 <li><Check size={15} strokeWidth={2.2} /> Приоритетная поддержка</li>
               </ul>
               <Link href="/#catalog" className={styles.planCta}>Выбрать шаблон</Link>
             </div>
           </div>
+          <p className={styles.sectionSubtitle} style={{ marginTop: 18 }}>
+            Оплата через Finik — любым банковским приложением Кыргызстана.
+          </p>
         </div>
       </section>
 

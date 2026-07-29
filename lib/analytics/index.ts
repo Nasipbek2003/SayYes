@@ -22,6 +22,9 @@ import { logger } from '@/lib/logger';
 export type FunnelEvent =
   | 'invitation_created'
   | 'checkout_started'
+  /** Публикация без платежа — покрыта активной подпиской автора. */
+  | 'checkout_skipped_subscription'
+  | 'subscription_started'
   | 'payment_succeeded'
   | 'payment_failed'
   | 'invitation_opened'

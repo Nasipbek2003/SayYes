@@ -15,6 +15,8 @@ model Author {
   createdAt      DateTime         @default(now())
   invitations    Invitation[]
   magicLinks     MagicLinkToken[]
+  payments       Payment[]
+  subscriptions  Subscription[]
 }
 
 model MagicLinkToken {
@@ -46,7 +48,7 @@ model Invitation {
   activatedAt    DateTime?
   author         Author           @relation(fields: [authorId], references: [id])
   opens          OpenEvent[]
-  payment        Payment?
+  payments       Payment[]
   responses      Response[]
 }
 
@@ -84,14 +86,48 @@ model Response {
 
 model Payment {
   id           String        @id @default(cuid())
-  invitationId String        @unique
+  /**
+   * Приглашение, за которое платят. Может быть null: подписку автор может
+   * оплатить и вне контекста конкретного приглашения.
+   */
+  invitationId String?
+  authorId     String
+  /** Разовая оплата приглашения или подписка на месяц. */
+  plan         PaymentPlan   @default(SINGLE)
   provider     String
   sessionId    String        @unique
+  /** Идентификатор транзакции у провайдера (для дедупликации вебхуков). */
+  externalId   String?
   status       PaymentStatus @default(PENDING)
+  /** Сумма в целых сомах (KGS). */
   amount       Int
+  currency     String        @default("KGS")
   tier         Tier
   createdAt    DateTime      @default(now())
-  invitation   Invitation    @relation(fields: [invitationId], references: [id])
+  paidAt       DateTime?
+  author       Author        @relation(fields: [authorId], references: [id])
+  invitation   Invitation?   @relation(fields: [invitationId], references: [id])
+
+  @@index([invitationId])
+  @@index([authorId])
+}
+
+/**
+ * Месячная подписка автора: пока `expiresAt` в будущем, приглашения
+ * публикуются без отдельной оплаты. Продление — новый успешный платёж плана
+ * MONTHLY (Finik Web SDK не умеет автосписания, поэтому продление ручное).
+ */
+model Subscription {
+  id        String   @id @default(cuid())
+  authorId  String
+  startedAt DateTime @default(now())
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author    Author   @relation(fields: [authorId], references: [id])
+
+  @@index([authorId])
+  @@index([expiresAt])
 }
 
 model NotificationOutbox {
@@ -123,6 +159,11 @@ enum PaymentStatus {
   PENDING
   SUCCEEDED
   FAILED
+}
+
+enum PaymentPlan {
+  SINGLE
+  MONTHLY
 }
 
 enum OutboxStatus {

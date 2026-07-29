@@ -265,6 +265,359 @@
   color: var(--text-muted);
 }
 
+/* Панель поиска и фильтров */
+.filterBar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.searchInput {
+  width: 100%;
+  font: inherit;
+  font-size: 14px;
+  padding: 10px 14px;
+  border-radius: var(--radius-chip);
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--accent-decor);
+}
+
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Кастомный select: триггер + меню */
+.selectWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.selectBtn,
+.dateBtn {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: var(--radius-chip);
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  text-align: left;
+  transition: border-color 0.15s;
+}
+
+.selectBtn:hover,
+.dateBtn:hover {
+  border-color: var(--accent-decor);
+}
+
+.selectBtn:focus-visible,
+.dateBtn:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.selectBtnOpen {
+  border-color: var(--accent);
+}
+
+.selectValue {
+  white-space: nowrap;
+}
+
+.fieldIcon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 100%;
+  list-style: none;
+  padding: 6px;
+  border-radius: var(--radius-btn);
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 12px 28px rgba(61, 44, 42, 0.12);
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: var(--radius-chip);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.menuItemActive {
+  background: var(--bg);
+}
+
+.menuItemSelected {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* Кастомное поле даты */
+.dateWrap {
+  position: relative;
+  flex: 1;
+  min-width: 132px;
+}
+
+.dateBtn {
+  padding-right: 30px;
+}
+
+.dateIcon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.dateValue {
+  white-space: nowrap;
+}
+
+.datePlaceholder {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.dateClear {
+  appearance: none;
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.dateClear:hover {
+  background: var(--bg-secondary);
+  color: var(--accent);
+}
+
+/* Календарь */
+.calendar {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 268px;
+  padding: 12px;
+  border-radius: var(--radius-card);
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 14px 32px rgba(61, 44, 42, 0.14);
+}
+
+.calHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.calTitle {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  color: var(--text);
+}
+
+.calNav {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.calNav:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.calWeekdays,
+.calGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.calWeekday {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  text-align: center;
+  padding-bottom: 4px;
+}
+
+.calDay {
+  appearance: none;
+  font: inherit;
+  font-size: 12px;
+  height: 30px;
+  border: none;
+  border-radius: var(--radius-chip);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.calDay:hover:not(:disabled) {
+  background: var(--bg-secondary);
+}
+
+.calDayOutside {
+  color: var(--brand-sig);
+}
+
+.calDayToday {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.calDaySelected,
+.calDaySelected:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--text-on-cta);
+  font-weight: 600;
+}
+
+.calDay:disabled {
+  color: var(--border);
+  cursor: not-allowed;
+}
+
+.calFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1.5px solid var(--border);
+}
+
+.calAction {
+  appearance: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.calAction:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.calAction:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.filterDateSep {
+  font-size: 13px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.filterReset {
+  appearance: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 7px 12px;
+  border-radius: var(--radius-chip);
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.filterReset:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+@media (max-width: 520px) {
+  .filterRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .selectWrap {
+    grid-column: 1 / -1;
+  }
+
+  .dateWrap {
+    min-width: 0;
+  }
+
+  /* Второй календарь прижимаем к правому краю, чтобы не уезжал за экран */
+  .filterRow > .dateWrap:last-of-type .calendar {
+    left: auto;
+    right: 0;
+  }
+
+  .filterDateSep {
+    display: none;
+  }
+
+  .filterReset {
+    grid-column: 1 / -1;
+  }
+}
+
 /* Карточки приглашений (list page) */
 .cardList {
   display: flex;
@@ -304,6 +657,69 @@
 .cardDate {
   font-size: 12px;
   color: var(--text-muted);
+}
+
+@media (max-width: 520px) {
+  .cardList {
+    gap: 10px;
+  }
+
+  .card {
+    padding: 14px 16px;
+    gap: 10px;
+  }
+
+  .cardTitle {
+    font-size: 15px;
+  }
+
+  .cardDate {
+    font-size: 11px;
+  }
+
+  .linkBlock {
+    padding: 8px 10px;
+  }
+
+  .linkUrl {
+    font-size: 12px;
+  }
+
+  .statsRow {
+    gap: 8px;
+  }
+
+  .statBox {
+    padding: 8px 12px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .statNum {
+    font-size: 20px;
+  }
+
+  .statLabel {
+    font-size: 11px;
+  }
+
+  .cardActions {
+    gap: 6px;
+  }
+
+  .detailLink {
+    font-size: 12px;
+  }
+
+  .deleteBtn {
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+
+  .copyBtn {
+    font-size: 11px;
+    padding: 5px 12px;
+  }
 }
 
 /* Блок ссылки */

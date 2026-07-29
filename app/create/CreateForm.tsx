@@ -22,12 +22,14 @@ import {
 } from '@/lib/create/form';
 import { AUTOSAVE_DEBOUNCE_MS, Debouncer } from '@/lib/create/autosave';
 
+import { PLAN_LIST, PLANS, type PlanId } from '@/lib/pricing';
+
 import {
   ApiError,
   UnauthorizedError,
   checkTelegramLink,
   createDraft,
-  devActivate,
+  startCheckout,
   updateDraft,
   uploadPhoto,
 } from './client';
@@ -112,6 +114,8 @@ export function CreateForm({ template, themeId, isAuthed = false, botUsername }:
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [activating, setActivating] = useState(false);
+  /** Открыт ли выбор тарифа перед оплатой. */
+  const [planOpen, setPlanOpen] = useState(false);
   const [mobileView, setMobileView] = useState<MobileView>('edit');
   const [activeScreenId, setActiveScreenId] = useState<string>(template.startScreen);
   /** Telegram-ник автора — туда придёт уведомление, когда гость ответит. */
@@ -328,7 +332,8 @@ export function CreateForm({ template, themeId, isAuthed = false, botUsername }:
     }
   };
 
-  const onActivate = async () => {
+  /** Проверяет форму и открывает выбор тарифа (шаг перед оплатой). */
+  const onPublish = () => {
     setError(null);
     if (!validation.ok) {
       // Подсветить незаполненные обязательные поля.
@@ -336,6 +341,15 @@ export function CreateForm({ template, themeId, isAuthed = false, botUsername }:
       setError('Заполни обязательные поля.');
       return;
     }
+    setPlanOpen(true);
+  };
+
+  /**
+   * Сохраняет черновик и уводит на оплату выбранного тарифа. Если у автора
+   * активна подписка, сервер публикует приглашение сразу и возвращает ссылку.
+   */
+  const onCheckout = async (plan: PlanId) => {
+    setError(null);
     setActivating(true);
     debouncerRef.current?.flushNow();
     const id = await ensureDraft(data);
@@ -346,12 +360,14 @@ export function CreateForm({ template, themeId, isAuthed = false, botUsername }:
         themeId,
         notifyTelegram,
       });
-      const { url } = await devActivate(id);
-      window.location.href = url;
+      const result = await startCheckout(id, plan);
+      const next = result.checkoutUrl ?? result.url;
+      if (!next) throw new ApiError(500, 'Платёжная система не ответила ссылкой.');
+      window.location.href = next;
     } catch (err) {
       setActivating(false);
       if (err instanceof UnauthorizedError) handleAuthError();
-      else setError(err instanceof ApiError ? err.message : 'Не удалось создать ссылку.');
+      else setError(err instanceof ApiError ? err.message : 'Не удалось перейти к оплате.');
     }
   };
 
@@ -525,10 +541,10 @@ export function CreateForm({ template, themeId, isAuthed = false, botUsername }:
                   {isLastGroup ? (
                     <button
                       className={styles.btnPrimary}
-                      onClick={onActivate}
+                      onClick={onPublish}
                       disabled={!validation.ok || activating}
                     >
-                      {activating ? 'Создаём ссылку…' : 'Получить ссылку'}
+                      {activating ? 'Переходим к оплате…' : 'Получить ссылку'}
                     </button>
                   ) : (
                     <button className={styles.btnPrimary} onClick={() => setStep(step + 1)}>
@@ -540,6 +556,112 @@ export function CreateForm({ template, themeId, isAuthed = false, botUsername }:
             </div>
           </div>
         )}
+      </div>
+
+      {planOpen && (
+        <PlanPicker
+          busy={activating}
+          error={error}
+          onClose={() => setPlanOpen(false)}
+          onChoose={(plan) => void onCheckout(plan)}
+        />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Выбор тарифа перед оплатой: разовая оплата приглашения или подписка на месяц.
+ * Цены берутся из единственного источника правды — `lib/pricing.ts`.
+ */
+function PlanPicker({
+  busy,
+  error,
+  onChoose,
+  onClose,
+}: {
+  busy: boolean;
+  error: string | null;
+  onChoose: (plan: PlanId) => void;
+  onClose: () => void;
+}) {
+  const [selected, setSelected] = useState<PlanId>('single');
+
+  return (
+    <div
+      className={styles.planOverlay}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Выбор тарифа"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !busy) onClose();
+      }}
+    >
+      <div className={styles.planModal}>
+        <h2 className={styles.planTitle}>Как оплатим?</h2>
+        <p className={styles.planSubtitle}>
+          Ссылка на приглашение появится сразу после оплаты.
+        </p>
+
+        <div className={styles.tiers}>
+          {PLAN_LIST.map((plan) => {
+            const isActive = plan.id === selected;
+            return (
+              <button
+                key={plan.id}
+                type="button"
+                className={`${styles.tier} ${isActive ? styles.tierActive : ''}`}
+                aria-pressed={isActive}
+                onClick={() => setSelected(plan.id)}
+              >
+                {plan.id === 'monthly' && (
+                  <span className={styles.planBadge}>Выгодно от 3 приглашений</span>
+                )}
+                <span className={styles.tierName}>{plan.title}</span>
+                <span className={styles.tierPrice}>
+                  {plan.amount} сом
+                  {plan.periodDays ? <span className={styles.planPeriod}> / месяц</span> : null}
+                </span>
+                <ul className={styles.tierFeatures}>
+                  {plan.id === 'single' ? (
+                    <>
+                      <li>Одно приглашение</li>
+                      <li>Все функции шаблона</li>
+                      <li>Уведомления автору</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>Сколько угодно приглашений</li>
+                      <li>30 дней доступа</li>
+                      <li>Все функции шаблонов</li>
+                    </>
+                  )}
+                </ul>
+              </button>
+            );
+          })}
+        </div>
+
+        {error && <p className={styles.error}>{error}</p>}
+
+        <div className={styles.planActions}>
+          <button
+            type="button"
+            className={styles.btnPrimary}
+            disabled={busy}
+            onClick={() => onChoose(selected)}
+          >
+            {busy ? 'Переходим к оплате…' : `Оплатить ${PLANS[selected].amount} сом`}
+          </button>
+        </div>
+
+        <button type="button" className={styles.planCancel} disabled={busy} onClick={onClose}>
+          Вернуться к редактированию
+        </button>
+
+        <p className={styles.planNote}>
+          Оплата через Finik — любым банковским приложением Кыргызстана.
+        </p>
       </div>
     </div>
   );

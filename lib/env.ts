@@ -11,6 +11,18 @@ function optional(key: string, fallback = ''): string {
 }
 
 /**
+ * Нормализует PEM из переменной окружения: в `.env` перевод строки обычно не
+ * сохраняется, поэтому строку вида `-----BEGIN...\n...` разворачиваем обратно в
+ * многострочный PEM.
+ *
+ * Чтение ключа из файла (`*_KEY_PATH`) делает серверный код — здесь нельзя
+ * трогать `node:fs`, потому что этот модуль попадает и в клиентский бандл.
+ */
+function normalisePem(value: string): string {
+  return value.trim().replace(/\\n/g, '\n');
+}
+
+/**
  * Parse a Cloudinary connection string of the form
  * `cloudinary://<api_key>:<api_secret>@<cloud_name>` into its parts. Returns
  * null when the value is empty or malformed, so callers can fall back to the
@@ -33,9 +45,36 @@ export const env = {
   sessionSecret: optional('SESSION_SECRET'),
 
   payment: {
+    /** 'finik' — реальный эквайринг, 'mock' — локальная заглушка. */
     provider: optional('PAYMENT_PROVIDER', 'mock'),
     apiKey: optional('PAYMENT_API_KEY'),
     webhookSecret: optional('PAYMENT_WEBHOOK_SECRET'),
+  },
+
+  /**
+   * Finik Web SDK (эквайринг, KGS). Приватный ключ подписывает каждый запрос,
+   * публичный ключ Finik проверяет подпись вебхуков.
+   *
+   * `privateKey` можно задать одной строкой с `\n` вместо переводов строк —
+   * {@link normalisePem} приводит её к нормальному PEM. Как альтернатива —
+   * `FINIK_PRIVATE_KEY_PATH` с путём до файла (удобно локально); файл читает
+   * серверный адаптер `lib/payments/finik.ts`.
+   */
+  finik: {
+    baseUrl: optional('FINIK_BASE_URL', 'https://api.acquiring.averspay.kg'),
+    /**
+     * Путь создания платежа. Документация Finik — `/v1/payment`; кабинет иногда
+     * выдаёт другой URL. Путь участвует в подписи, поэтому он настраиваемый.
+     */
+    paymentPath: optional('FINIK_PAYMENT_PATH', '/v1/payment'),
+    apiKey: optional('FINIK_API_KEY'),
+    accountId: optional('FINIK_ACCOUNT_ID'),
+    /** Имя QR/платежа, которое видит плательщик. */
+    qrName: optional('FINIK_QR_NAME', 'SayYes'),
+    privateKey: normalisePem(optional('FINIK_PRIVATE_KEY')),
+    privateKeyPath: optional('FINIK_PRIVATE_KEY_PATH'),
+    webhookPublicKey: normalisePem(optional('FINIK_WEBHOOK_PUBLIC_KEY')),
+    webhookPublicKeyPath: optional('FINIK_WEBHOOK_PUBLIC_KEY_PATH'),
   },
 
   telegram: {

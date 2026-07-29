@@ -5,7 +5,7 @@
  * ## Testing approach
  * Auth (`requireAuthor` from `@/lib/auth/nextCookies`) and the
  * {@link PaymentService} singleton are mocked, so these tests cover the HTTP
- * adapter only: auth gating, tier validation, ownership/404/409 status mapping
+ * adapter only: auth gating, plan validation, ownership/404/409 status mapping
  * and that the checkout URL is returned. The real {@link PaymentServiceError}
  * class is kept so `paymentErrorToResponse` maps domain errors to the right
  * status.
@@ -56,29 +56,56 @@ beforeEach(() => {
 });
 
 describe('POST /api/invitations/:id/checkout', () => {
-  it('starts a basic checkout and returns the checkoutUrl with 200', async () => {
-    startCheckout.mockResolvedValue('https://pay.example/sess_1');
+  it('starts a one-off checkout and returns the checkoutUrl with 200', async () => {
+    startCheckout.mockResolvedValue({
+      kind: 'checkout',
+      checkoutUrl: 'https://qr.finik/pay/abc',
+      sessionId: 'sess_1',
+    });
 
-    const res = await POST(postReq({ tier: 'basic' }), params());
+    const res = await POST(postReq({ plan: 'single' }), params());
 
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({
-      checkoutUrl: 'https://pay.example/sess_1',
+      checkoutUrl: 'https://qr.finik/pay/abc',
+      sessionId: 'sess_1',
     });
-    expect(startCheckout).toHaveBeenCalledWith('inv-1', AUTHOR, 'basic');
+    expect(startCheckout).toHaveBeenCalledWith('inv-1', AUTHOR, 'single');
   });
 
-  it('starts a premium checkout', async () => {
-    startCheckout.mockResolvedValue('https://pay.example/sess_2');
+  it('starts a monthly subscription checkout', async () => {
+    startCheckout.mockResolvedValue({
+      kind: 'checkout',
+      checkoutUrl: 'https://qr.finik/pay/def',
+      sessionId: 'sess_2',
+    });
 
-    const res = await POST(postReq({ tier: 'premium' }), params());
+    const res = await POST(postReq({ plan: 'monthly' }), params());
 
     expect(res.status).toBe(200);
-    expect(startCheckout).toHaveBeenCalledWith('inv-1', AUTHOR, 'premium');
+    expect(startCheckout).toHaveBeenCalledWith('inv-1', AUTHOR, 'monthly');
   });
 
-  it('returns 400 for a missing or invalid tier (no service call)', async () => {
-    const res = await POST(postReq({ tier: 'gold' }), params());
+  it('returns the invitation URL when an active subscription covers publishing', async () => {
+    startCheckout.mockResolvedValue({
+      kind: 'activated',
+      invitationId: 'inv-1',
+      token: 'tok-1',
+      url: 'https://sayyes.kg/i/tok-1',
+    });
+
+    const res = await POST(postReq({ plan: 'single' }), params());
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({
+      activated: true,
+      url: 'https://sayyes.kg/i/tok-1',
+      token: 'tok-1',
+    });
+  });
+
+  it('returns 400 for a missing or invalid plan (no service call)', async () => {
+    const res = await POST(postReq({ plan: 'gold' }), params());
     expect(res.status).toBe(400);
     expect(startCheckout).not.toHaveBeenCalled();
 
@@ -90,7 +117,7 @@ describe('POST /api/invitations/:id/checkout', () => {
   it('returns 401 when unauthenticated', async () => {
     requireAuthor.mockRejectedValue(new AuthError(401, 'Authentication required'));
 
-    const res = await POST(postReq({ tier: 'basic' }), params());
+    const res = await POST(postReq({ plan: 'single' }), params());
     expect(res.status).toBe(401);
     expect(startCheckout).not.toHaveBeenCalled();
   });
@@ -98,7 +125,7 @@ describe('POST /api/invitations/:id/checkout', () => {
   it("returns 403 for another author's invitation (Requirement 10.4)", async () => {
     startCheckout.mockRejectedValue(new AuthError(403, 'forbidden'));
 
-    const res = await POST(postReq({ tier: 'basic' }), params());
+    const res = await POST(postReq({ plan: 'single' }), params());
     expect(res.status).toBe(403);
   });
 
@@ -107,7 +134,7 @@ describe('POST /api/invitations/:id/checkout', () => {
       new PaymentServiceError(404, 'not found', 'not_found'),
     );
 
-    const res = await POST(postReq({ tier: 'basic' }), params('missing'));
+    const res = await POST(postReq({ plan: 'single' }), params('missing'));
     expect(res.status).toBe(404);
     await expect(res.json()).resolves.toMatchObject({ code: 'not_found' });
   });
@@ -117,7 +144,7 @@ describe('POST /api/invitations/:id/checkout', () => {
       new PaymentServiceError(409, 'not draft', 'not_draft'),
     );
 
-    const res = await POST(postReq({ tier: 'basic' }), params());
+    const res = await POST(postReq({ plan: 'single' }), params());
     expect(res.status).toBe(409);
     await expect(res.json()).resolves.toMatchObject({ code: 'not_draft' });
   });

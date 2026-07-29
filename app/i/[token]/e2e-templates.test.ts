@@ -68,6 +68,7 @@ import {
   PaymentService,
   type PaymentInvitationRepo,
   type PaymentServicePaymentRepo,
+  type PaymentSubscriptionRepo,
 } from '@/lib/services/payment';
 import { MockPaymentProvider } from '@/lib/payments/provider';
 import { ScenarioEngine } from '@/lib/scenario/engine';
@@ -149,13 +150,18 @@ function makeStores() {
     create: async (input) => {
       const payment: Payment = {
         id: `pay-${++paySeq}`,
-        invitationId: input.invitationId,
+        invitationId: input.invitationId ?? null,
+        authorId: input.authorId,
+        plan: input.plan,
         provider: input.provider,
         sessionId: input.sessionId,
+        externalId: input.externalId ?? null,
         status: (input.status ?? 'PENDING') as PaymentStatus,
         amount: input.amount,
+        currency: input.currency ?? 'KGS',
         tier: input.tier,
         createdAt: new Date(),
+        paidAt: null,
       };
       payments.set(payment.sessionId, payment);
       return payment;
@@ -164,7 +170,11 @@ function makeStores() {
     updateStatus: async (sessionId, status) => {
       const existing = payments.get(sessionId);
       if (!existing) throw new Error(`no payment ${sessionId}`);
-      const updated: Payment = { ...existing, status };
+      const updated: Payment = {
+        ...existing,
+        status,
+        paidAt: status === 'SUCCEEDED' ? new Date() : existing.paidAt,
+      };
       payments.set(sessionId, updated);
       return updated;
     },
@@ -287,11 +297,26 @@ function makeHarness() {
 
   // Настоящий PaymentService с настоящим MockPaymentProvider (без эквайринга).
   const provider = new MockPaymentProvider({ appUrl: 'http://localhost:3000' });
+  // Подписок в этом прогоне нет: каждый платёж — разовый.
+  const subscriptionRepo: PaymentSubscriptionRepo = {
+    findActiveByAuthor: async () => null,
+    extend: async (authorId, days, now = new Date()) => ({
+      id: 'sub-1',
+      authorId,
+      startedAt: now,
+      expiresAt: new Date(now.getTime() + days * 24 * 60 * 60 * 1000),
+      createdAt: now,
+      updatedAt: now,
+    }),
+  };
+
   const paymentService = new PaymentService({
     provider,
     invitationRepo,
     paymentRepo,
+    subscriptionRepo,
     invitationService,
+    appUrl: 'http://localhost:3000',
   });
 
   return {
@@ -330,12 +355,11 @@ async function createPayActivateOpen(
   expect(draft.status).toBe('DRAFT');
 
   // 2. Инициирование оплаты (checkout) — провайдер выдаёт sessionId/URL.
-  const checkoutUrl = await h.paymentService.startCheckout(
-    draft.id,
-    AUTHOR,
-    'premium',
+  const checkout = await h.paymentService.startCheckout(draft.id, AUTHOR, 'single');
+  expect(checkout.kind).toBe('checkout');
+  expect(checkout.kind === 'checkout' && checkout.checkoutUrl).toContain(
+    '/mock-checkout/',
   );
-  expect(checkoutUrl).toContain('/mock-checkout/');
   const payment = [...h.payments.values()].find(
     (p) => p.invitationId === draft.id,
   )!;

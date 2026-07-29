@@ -9,8 +9,9 @@
  *  - startCheckout opens a session, persists a PENDING payment with the
  *    provider sessionId and the chosen tier, moves the invitation to
  *    PENDING_PAYMENT and returns the checkoutUrl (Requirement 3.1/3.2);
- *  - the selected tier ('basic' | 'premium') is recorded on both the invitation
- *    and the payment with the right amount (Requirement 3.1);
+ *  - the selected plan ('single' — 100 сом | 'monthly' — 300 сом) is recorded on
+ *    the payment with the right amount, а приглашение получает полный tier;
+ *  - активная подписка публикует приглашение без нового платежа;
  *  - unknown invitation → 404; another author's invitation → 403
  *    (Requirement 10.4); a non-DRAFT invitation → 409.
  *
@@ -27,17 +28,18 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
-import type { Invitation, Payment } from '@prisma/client';
+import type { Invitation, Payment, Subscription } from '@prisma/client';
 
 import { AuthError } from '@/lib/auth/guards';
 import type { CheckoutResult, PaymentProvider } from '@/lib/payments/provider';
+import { PLAN_AMOUNTS } from '@/lib/pricing';
 import {
   PaymentService,
   PaymentServiceError,
-  TIER_AMOUNTS,
   type PaymentActivationService,
   type PaymentInvitationRepo,
   type PaymentServicePaymentRepo,
+  type PaymentSubscriptionRepo,
 } from './payment';
 
 const AUTHOR = 'author-1';
@@ -89,28 +91,80 @@ function makeFakePaymentRepo(seed: Payment[] = []) {
     create: async (input) => {
       const payment: Payment = {
         id: `pay-${created.length + 1}`,
-        invitationId: input.invitationId,
+        invitationId: input.invitationId ?? null,
+        authorId: input.authorId,
+        plan: input.plan,
         provider: input.provider,
         sessionId: input.sessionId,
+        externalId: input.externalId ?? null,
         status: input.status ?? 'PENDING',
         amount: input.amount,
+        currency: input.currency ?? 'KGS',
         tier: input.tier,
         createdAt: new Date(),
+        paidAt: null,
       };
       created.push(payment);
       store.set(payment.sessionId, payment);
       return payment;
     },
     findBySessionId: async (sessionId) => store.get(sessionId) ?? null,
-    updateStatus: async (sessionId, status) => {
+    updateStatus: async (sessionId, status, extra = {}) => {
       const existing = store.get(sessionId);
       if (!existing) throw new Error(`no payment ${sessionId}`);
-      const updated: Payment = { ...existing, status };
+      const updated: Payment = {
+        ...existing,
+        status,
+        paidAt: status === 'SUCCEEDED' ? new Date() : existing.paidAt,
+        externalId: extra.externalId ?? existing.externalId,
+      };
       store.set(sessionId, updated);
       return updated;
     },
   };
   return { repo, created, store };
+}
+
+/**
+ * In-memory подписки: `active` — заранее выданная активная подписка,
+ * `extended` — журнал продлений, чтобы проверять оплату плана monthly.
+ */
+function makeFakeSubscriptionRepo(active: Subscription | null = null) {
+  const extended: Array<{ authorId: string; days: number }> = [];
+  let current = active;
+
+  const repo: PaymentSubscriptionRepo = {
+    findActiveByAuthor: async (authorId) =>
+      current && current.authorId === authorId ? current : null,
+    extend: async (authorId, days, now = new Date()) => {
+      extended.push({ authorId, days });
+      const from = current ? current.expiresAt : now;
+      current = {
+        id: 'sub-1',
+        authorId,
+        startedAt: current?.startedAt ?? now,
+        expiresAt: new Date(from.getTime() + days * 24 * 60 * 60 * 1000),
+        createdAt: now,
+        updatedAt: now,
+      };
+      return current;
+    },
+  };
+
+  return { repo, extended, get current() { return current; } };
+}
+
+function makeSubscription(overrides: Partial<Subscription> = {}): Subscription {
+  const now = new Date();
+  return {
+    id: 'sub-1',
+    authorId: AUTHOR,
+    startedAt: now,
+    expiresAt: new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000),
+    createdAt: now,
+    updatedAt: now,
+    ...overrides,
+  };
 }
 
 /** Fake activation service recording the invitation ids it was asked to activate. */
@@ -150,14 +204,17 @@ function buildService(deps: {
   provider: PaymentProvider;
   invitationRepo: PaymentInvitationRepo;
   paymentRepo: PaymentServicePaymentRepo;
+  subscriptionRepo?: PaymentSubscriptionRepo;
   invitationService?: PaymentActivationService;
 }): PaymentService {
   return new PaymentService({
     provider: deps.provider,
     invitationRepo: deps.invitationRepo,
     paymentRepo: deps.paymentRepo,
+    subscriptionRepo: deps.subscriptionRepo ?? makeFakeSubscriptionRepo().repo,
     invitationService:
       deps.invitationService ?? makeFakeActivationService().service,
+    appUrl: 'http://localhost:3000',
   });
 }
 
@@ -176,34 +233,45 @@ describe('PaymentService.startCheckout', () => {
       paymentRepo: payRepo,
     });
 
-    const url = await service.startCheckout('inv-1', AUTHOR, 'basic');
+    const result = await service.startCheckout('inv-1', AUTHOR, 'single');
 
-    expect(url).toBe('https://pay.example/sess_1');
-    expect(createCheckout).toHaveBeenCalledWith({
-      invitationId: 'inv-1',
-      tier: 'BASIC',
-      amount: TIER_AMOUNTS.basic,
+    expect(result).toEqual({
+      kind: 'checkout',
+      checkoutUrl: 'https://pay.example/sess_1',
+      sessionId: 'sess_1',
     });
+    expect(createCheckout).toHaveBeenCalledWith(
+      expect.objectContaining({
+        invitationId: 'inv-1',
+        authorId: AUTHOR,
+        plan: 'single',
+        tier: 'PREMIUM',
+        amount: PLAN_AMOUNTS.single,
+        currency: 'KGS',
+      }),
+    );
 
     // PENDING payment persisted with the provider session id.
     expect(created).toHaveLength(1);
     expect(created[0]).toMatchObject({
       invitationId: 'inv-1',
+      authorId: AUTHOR,
+      plan: 'SINGLE',
       provider: 'mock',
       sessionId: 'sess_1',
       status: 'PENDING',
-      amount: TIER_AMOUNTS.basic,
-      tier: 'BASIC',
+      amount: PLAN_AMOUNTS.single,
+      currency: 'KGS',
     });
 
-    // Invitation moved to PENDING_PAYMENT with the chosen tier.
+    // Invitation moved to PENDING_PAYMENT.
     const updated = store.get('inv-1')!;
     expect(updated.status).toBe('PENDING_PAYMENT');
-    expect(updated.tier).toBe('BASIC');
+    expect(updated.tier).toBe('PREMIUM');
   });
 
-  it('records the premium tier and its amount when premium is selected', async () => {
-    const { repo: invRepo, store } = makeFakeInvitationRepo([makeInvitation()]);
+  it('charges the monthly amount and records the MONTHLY plan for a subscription', async () => {
+    const { repo: invRepo } = makeFakeInvitationRepo([makeInvitation()]);
     const { repo: payRepo, created } = makeFakePaymentRepo();
     const { provider } = makeFakeProvider({
       checkoutUrl: 'https://pay.example/sess_2',
@@ -216,12 +284,38 @@ describe('PaymentService.startCheckout', () => {
       paymentRepo: payRepo,
     });
 
-    await service.startCheckout('inv-1', AUTHOR, 'premium');
+    await service.startCheckout('inv-1', AUTHOR, 'monthly');
 
     expect(created[0]).toMatchObject({
-      tier: 'PREMIUM',
-      amount: TIER_AMOUNTS.premium,
+      plan: 'MONTHLY',
+      amount: PLAN_AMOUNTS.monthly,
     });
+  });
+
+  it('activates without a payment when the author already has an active subscription', async () => {
+    const { repo: invRepo, store } = makeFakeInvitationRepo([makeInvitation()]);
+    const { repo: payRepo, created } = makeFakePaymentRepo();
+    const { provider, createCheckout } = makeFakeProvider({
+      checkoutUrl: 'x',
+      sessionId: 'x',
+    });
+    const { service: activation, activated } = makeFakeActivationService();
+
+    const service = buildService({
+      provider,
+      invitationRepo: invRepo,
+      paymentRepo: payRepo,
+      subscriptionRepo: makeFakeSubscriptionRepo(makeSubscription()).repo,
+      invitationService: activation,
+    });
+
+    const result = await service.startCheckout('inv-1', AUTHOR, 'single');
+
+    expect(result).toMatchObject({ kind: 'activated', invitationId: 'inv-1' });
+    // Никаких платежей и обращений к провайдеру.
+    expect(createCheckout).not.toHaveBeenCalled();
+    expect(created).toHaveLength(0);
+    expect(activated).toEqual(['inv-1']);
     expect(store.get('inv-1')!.tier).toBe('PREMIUM');
   });
 
@@ -238,7 +332,7 @@ describe('PaymentService.startCheckout', () => {
       paymentRepo: payRepo,
     });
 
-    await expect(service.startCheckout('missing', AUTHOR, 'basic')).rejects.toMatchObject(
+    await expect(service.startCheckout('missing', AUTHOR, 'single')).rejects.toMatchObject(
       { name: 'PaymentServiceError', status: 404 },
     );
   });
@@ -258,7 +352,7 @@ describe('PaymentService.startCheckout', () => {
       paymentRepo: payRepo,
     });
 
-    await expect(service.startCheckout('inv-1', AUTHOR, 'basic')).rejects.toBeInstanceOf(
+    await expect(service.startCheckout('inv-1', AUTHOR, 'single')).rejects.toBeInstanceOf(
       AuthError,
     );
     // No side effects on failure.
@@ -281,7 +375,7 @@ describe('PaymentService.startCheckout', () => {
       paymentRepo: payRepo,
     });
 
-    await expect(service.startCheckout('inv-1', AUTHOR, 'basic')).rejects.toMatchObject({
+    await expect(service.startCheckout('inv-1', AUTHOR, 'single')).rejects.toMatchObject({
       name: 'PaymentServiceError',
       status: 409,
       code: 'not_draft',
@@ -296,12 +390,17 @@ function makePayment(overrides: Partial<Payment> = {}): Payment {
   return {
     id: 'pay-1',
     invitationId: 'inv-1',
+    authorId: AUTHOR,
+    plan: 'SINGLE',
     provider: 'mock',
     sessionId: 'sess_1',
+    externalId: null,
     status: 'PENDING',
-    amount: TIER_AMOUNTS.basic,
-    tier: 'BASIC',
+    amount: PLAN_AMOUNTS.single,
+    currency: 'KGS',
+    tier: 'PREMIUM',
     createdAt: new Date(),
+    paidAt: null,
     ...overrides,
   };
 }
@@ -337,6 +436,61 @@ describe('PaymentService.handleWebhook', () => {
     expect(activated).toEqual(['inv-1']);
     // The invitation we kept in the store still exists (activation delegated).
     expect(store.get('inv-1')).toBeDefined();
+  });
+
+  it('extends the subscription for 30 days when a MONTHLY payment succeeds', async () => {
+    const { repo: invRepo } = makeFakeInvitationRepo([
+      makeInvitation({ status: 'PENDING_PAYMENT' }),
+    ]);
+    const { repo: payRepo } = makeFakePaymentRepo([makePayment({ plan: 'MONTHLY' })]);
+    const { provider } = makeFakeProvider({ checkoutUrl: 'x', sessionId: 'x' });
+    const { service: activation, activated } = makeFakeActivationService();
+    const subs = makeFakeSubscriptionRepo();
+
+    const service = buildService({
+      provider,
+      invitationRepo: invRepo,
+      paymentRepo: payRepo,
+      subscriptionRepo: subs.repo,
+      invitationService: activation,
+    });
+
+    const result = await service.handleWebhook({
+      sessionId: 'sess_1',
+      status: 'succeeded',
+      externalId: 'trx-1',
+    });
+
+    expect(result).toMatchObject({ status: 'activated', invitationId: 'inv-1' });
+    expect(subs.extended).toEqual([{ authorId: AUTHOR, days: 30 }]);
+    expect(activated).toEqual(['inv-1']);
+  });
+
+  it('reports "subscribed" for a subscription payment without an invitation', async () => {
+    const { repo: invRepo } = makeFakeInvitationRepo([]);
+    const { repo: payRepo } = makeFakePaymentRepo([
+      makePayment({ plan: 'MONTHLY', invitationId: null }),
+    ]);
+    const { provider } = makeFakeProvider({ checkoutUrl: 'x', sessionId: 'x' });
+    const { service: activation, activated } = makeFakeActivationService();
+    const subs = makeFakeSubscriptionRepo();
+
+    const service = buildService({
+      provider,
+      invitationRepo: invRepo,
+      paymentRepo: payRepo,
+      subscriptionRepo: subs.repo,
+      invitationService: activation,
+    });
+
+    const result = await service.handleWebhook({
+      sessionId: 'sess_1',
+      status: 'succeeded',
+    });
+
+    expect(result.status).toBe('subscribed');
+    expect(subs.extended).toHaveLength(1);
+    expect(activated).toEqual([]);
   });
 
   it('keeps the draft and marks the payment FAILED on a failed/cancelled payment (Requirement 3.4)', async () => {

@@ -1,33 +1,28 @@
 /**
- * POST /api/invitations/:id/checkout — start a payment checkout (task 5.1).
+ * POST /api/invitations/:id/checkout — начать оплату приглашения.
  *
  * Auth: author (401 when no session). Ownership enforced (403 for someone
  * else's invitation, Requirement 10.4); unknown id → 404; checking out a
  * non-DRAFT invitation → 409.
  *
- * Body: { tier: 'basic' | 'premium' }
+ * Body: `{ plan: 'single' | 'monthly' }` — разовая оплата (100 сом) или
+ * подписка на месяц (300 сом).
  *
- * Delegates to {@link PaymentService.startCheckout}, which records the chosen
- * tier, creates a PENDING {@link Payment} with the provider session id, moves
- * the invitation to `PENDING_PAYMENT` and returns the hosted checkout URL the
- * author is redirected to (Requirement 3.1/3.2). On success returns 200 with
- * `{ checkoutUrl }`.
- *
- * Webhook verification / activation is out of scope here (task 5.2).
+ * Ответ 200:
+ *  - `{ checkoutUrl }` — нужно перейти на страницу оплаты провайдера;
+ *  - `{ activated: true, url, token }` — у автора активна подписка, приглашение
+ *    опубликовано сразу, без платежа.
  */
 import { authErrorToResponse } from '@/lib/auth';
 import { requireAuthor } from '@/lib/auth/nextCookies';
 import { track } from '@/lib/analytics';
-import {
-  PaymentServiceError,
-  paymentService,
-  parseTier,
-} from '@/lib/services/payment';
+import { parsePlan } from '@/lib/pricing';
+import { PaymentServiceError, paymentService } from '@/lib/services/payment';
 
 export const runtime = 'nodejs';
 
 interface CheckoutBody {
-  tier?: unknown;
+  plan?: unknown;
 }
 
 export async function POST(
@@ -50,19 +45,32 @@ export async function POST(
     return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const tier = parseTier(body?.tier);
-  if (tier === null) {
+  const plan = parsePlan(body?.plan);
+  if (plan === null) {
     return Response.json(
-      { error: "`tier` must be 'basic' or 'premium'." },
+      { error: "`plan` must be 'single' or 'monthly'." },
       { status: 400 },
     );
   }
 
   try {
-    const checkoutUrl = await paymentService.startCheckout(id, authorId, tier);
+    const result = await paymentService.startCheckout(id, authorId, plan);
+
+    if (result.kind === 'activated') {
+      // Подписка уже оплачена — публикуем без нового платежа.
+      track('checkout_skipped_subscription', { invitationId: id, plan });
+      return Response.json(
+        { activated: true, url: result.url, token: result.token },
+        { status: 200 },
+      );
+    }
+
     // Funnel: author reached checkout (conversion analytics, gap #5).
-    track('checkout_started', { invitationId: id, tier });
-    return Response.json({ checkoutUrl }, { status: 200 });
+    track('checkout_started', { invitationId: id, plan });
+    return Response.json(
+      { checkoutUrl: result.checkoutUrl, sessionId: result.sessionId },
+      { status: 200 },
+    );
   } catch (error) {
     return paymentErrorToResponse(error);
   }
