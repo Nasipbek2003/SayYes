@@ -79,9 +79,9 @@ export const env = {
     /** Имя QR/платежа, которое видит плательщик. */
     qrName: optional('FINIK_QR_NAME', 'SayYes'),
     privateKey: normalisePem(optional('FINIK_PRIVATE_KEY')),
-    privateKeyPath: optional('FINIK_PRIVATE_KEY_PATH'),
+    privateKeyPath: optional('FINIK_PRIVATE_KEY_PATH').trim(),
     webhookPublicKey: normalisePem(optional('FINIK_WEBHOOK_PUBLIC_KEY')),
-    webhookPublicKeyPath: optional('FINIK_WEBHOOK_PUBLIC_KEY_PATH'),
+    webhookPublicKeyPath: optional('FINIK_WEBHOOK_PUBLIC_KEY_PATH').trim(),
   },
 
   telegram: {
