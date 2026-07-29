@@ -45,10 +45,17 @@ export const env = {
   sessionSecret: optional('SESSION_SECRET'),
 
   payment: {
-    /** 'finik' — реальный эквайринг, 'mock' — локальная заглушка. */
+    /** 'finik' — реальный эквайринг, 'mock' — заглушка без списания денег. */
     provider: optional('PAYMENT_PROVIDER', 'mock'),
     apiKey: optional('PAYMENT_API_KEY'),
     webhookSecret: optional('PAYMENT_WEBHOOK_SECRET'),
+    /**
+     * Разрешить тестовую оплату (страницу /mock-checkout и dev-активацию) на
+     * задеплоенном стенде. По умолчанию она доступна только локально: с ней
+     * приглашение публикуется бесплатно, поэтому на реальном сайте включать
+     * только осознанно, для демо.
+     */
+    allowMockInProduction: optional('ALLOW_MOCK_PAYMENTS') === 'true',
   },
 
   /**

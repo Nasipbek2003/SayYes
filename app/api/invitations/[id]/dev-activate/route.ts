@@ -7,7 +7,7 @@
  */
 import { authErrorToResponse } from '@/lib/auth';
 import { requireAuthor } from '@/lib/auth/nextCookies';
-import { env } from '@/lib/env';
+import { mockPaymentsEnabled } from '@/lib/payments/mockAccess';
 import { invitationRepo } from '@/lib/repositories';
 import { invitationService, InvitationServiceError } from '@/lib/services/invitation';
 
@@ -17,9 +17,9 @@ export async function POST(
   _request: Request,
   context: { params: Promise<{ id: string }> },
 ): Promise<Response> {
-  // Бесплатная активация допустима только локально: с подключённым эквайрингом
-  // (Finik) публикация возможна лишь после успешной оплаты или по подписке.
-  if (env.nodeEnv === 'production' || env.payment.provider !== 'mock') {
+  // Бесплатная активация допустима только в режиме заглушки: с подключённым
+  // эквайрингом публикация возможна лишь после оплаты или по подписке.
+  if (!mockPaymentsEnabled()) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
 

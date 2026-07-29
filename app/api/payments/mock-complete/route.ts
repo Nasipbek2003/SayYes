@@ -5,12 +5,12 @@
  * /mock-checkout/<session> вызывает этот эндпоинт с нужным исходом, и платёж
  * проходит тот же путь, что и настоящий (`PaymentService.handleWebhook`).
  *
- * Жёстко закрыт в продакшене и при любом реальном провайдере, чтобы нельзя
- * было «оплатить» приглашение бесплатно.
+ * Закрыт при любом реальном провайдере, а на задеплоенном стенде — ещё и без
+ * `ALLOW_MOCK_PAYMENTS=true`, чтобы нельзя было «оплатить» приглашение бесплатно.
  */
 import { authErrorToResponse } from '@/lib/auth';
 import { requireAuthor } from '@/lib/auth/nextCookies';
-import { env } from '@/lib/env';
+import { mockPaymentsEnabled } from '@/lib/payments/mockAccess';
 import { paymentService } from '@/lib/services/payment';
 
 export const runtime = 'nodejs';
@@ -21,7 +21,7 @@ interface Body {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  if (env.nodeEnv === 'production' || env.payment.provider !== 'mock') {
+  if (!mockPaymentsEnabled()) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
 

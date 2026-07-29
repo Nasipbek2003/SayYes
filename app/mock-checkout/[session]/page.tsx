@@ -1,13 +1,14 @@
 /**
- * /mock-checkout/<session> — платёжная страница-заглушка для локальной работы
- * без реального эквайринга (`PAYMENT_PROVIDER=mock`).
+ * /mock-checkout/<session> — платёжная страница-заглушка для работы без
+ * реального эквайринга (`PAYMENT_PROVIDER=mock`). На задеплоенном стенде
+ * доступна только при `ALLOW_MOCK_PAYMENTS=true`.
  *
  * Кнопки вызывают `/api/payments/mock-complete`, который прогоняет платёж через
  * тот же `PaymentService.handleWebhook`, что и настоящий вебхук Finik.
  */
 import { notFound } from 'next/navigation';
 
-import { env } from '@/lib/env';
+import { mockPaymentsEnabled } from '@/lib/payments/mockAccess';
 
 import { MockCheckoutClient } from './MockCheckoutClient';
 
@@ -21,7 +22,7 @@ export default async function MockCheckoutPage({
 }: {
   params: Promise<{ session: string }>;
 }) {
-  if (env.nodeEnv === 'production' || env.payment.provider !== 'mock') {
+  if (!mockPaymentsEnabled()) {
     notFound();
   }
 

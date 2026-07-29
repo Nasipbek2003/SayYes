@@ -16,6 +16,8 @@
 import { authErrorToResponse } from '@/lib/auth';
 import { requireAuthor } from '@/lib/auth/nextCookies';
 import { track } from '@/lib/analytics';
+import { env } from '@/lib/env';
+import { mockPaymentsEnabled } from '@/lib/payments/mockAccess';
 import { parsePlan } from '@/lib/pricing';
 import { PaymentServiceError, paymentService } from '@/lib/services/payment';
 
@@ -50,6 +52,15 @@ export async function POST(
     return Response.json(
       { error: "`plan` must be 'single' or 'monthly'." },
       { status: 400 },
+    );
+  }
+
+  // Заглушка выключена, а реальный провайдер не подключён — честно говорим об
+  // этом здесь, вместо того чтобы вести автора на закрытую страницу оплаты.
+  if (env.payment.provider === 'mock' && !mockPaymentsEnabled()) {
+    return Response.json(
+      { error: 'Оплата пока не подключена. Попробуй позже.', code: 'payments_disabled' },
+      { status: 503 },
     );
   }
 
