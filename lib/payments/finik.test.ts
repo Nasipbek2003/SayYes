@@ -81,8 +81,7 @@ describe('FinikPaymentProvider.createCheckout', () => {
       Amount: 100,
       CardType: 'FINIK_QR',
       PaymentId: result.sessionId,
-      // В ссылку возврата дописан идентификатор платежа.
-      RedirectUrl: `${APP_URL}/payment/callback?session=${result.sessionId}`,
+      RedirectUrl: `${APP_URL}/payment/callback`,
     });
     expect(body.Data).toMatchObject({
       accountId: 'acc-1',
@@ -107,7 +106,7 @@ describe('FinikPaymentProvider.createCheckout', () => {
     );
   });
 
-  it('сохраняет свой session в переданном successUrl', async () => {
+  it('отдаёт RedirectUrl без query — Finik дописывает параметры сам', async () => {
     let sent: Record<string, unknown> = {};
     const fetchImpl = (async (_url: string, init: RequestInit) => {
       sent = JSON.parse(String(init.body)) as Record<string, unknown>;
@@ -117,14 +116,13 @@ describe('FinikPaymentProvider.createCheckout', () => {
       });
     }) as unknown as typeof fetch;
 
-    const { sessionId } = await buildProvider(fetchImpl).createCheckout({
+    await buildProvider(fetchImpl).createCheckout({
       ...checkoutParams,
       successUrl: `${APP_URL}/payment/done?from=create`,
     });
 
-    expect(sent.RedirectUrl).toBe(
-      `${APP_URL}/payment/done?from=create&session=${sessionId}`,
-    );
+    // Иначе Finik склеит своё `?paymentId=…` с уже существующим query.
+    expect(sent.RedirectUrl).toBe(`${APP_URL}/payment/done`);
   });
 
   it('падает с понятной ошибкой, если Finik не вернул ссылку', async () => {

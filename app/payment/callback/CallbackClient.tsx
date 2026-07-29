@@ -27,9 +27,28 @@ interface StatusResponse {
   url: string | null;
 }
 
+/** UUID в любом виде — им является идентификатор платежа Finik. */
+const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+
+/**
+ * Достаёт идентификатор платежа из параметра ссылки.
+ *
+ * Finik дописывает свои параметры к `RedirectUrl` через `?`, поэтому значение
+ * может прийти склеенным: `session=<uuid>?paymentId=<uuid>&status=…`. Берём
+ * первый UUID, сохраняя префикс `mock_` у тестовых платежей.
+ */
+function normaliseSession(raw: string): string {
+  const value = raw.split(/[?&#]/)[0].trim();
+  const uuid = UUID_RE.exec(raw)?.[0];
+  if (!uuid) return value;
+  return value.startsWith('mock_') || raw.startsWith('mock_') ? `mock_${uuid}` : uuid;
+}
+
 export function CallbackClient() {
   const params = useSearchParams();
-  const sessionId = params.get('session') ?? params.get('paymentId') ?? '';
+  const sessionId = normaliseSession(
+    params.get('session') ?? params.get('paymentId') ?? '',
+  );
 
   const [phase, setPhase] = useState<Phase>(sessionId ? 'pending' : 'error');
   const [message, setMessage] = useState<string | null>(
@@ -49,9 +68,17 @@ export function CallbackClient() {
       setMessage('Сессия истекла. Войди снова — платёж не потеряется.');
       return true;
     }
+    if (res.status === 404) {
+      // Платёж не найден: ссылка возврата пришла с чужим или битым id.
+      setPhase('error');
+      setMessage(
+        'Не нашли этот платёж. Если деньги списались, ссылка появится в кабинете — проверь «Мои приглашения».',
+      );
+      return true;
+    }
     if (!res.ok) {
       setPhase('error');
-      setMessage('Не удалось проверить статус платежа.');
+      setMessage(`Не удалось проверить статус платежа (ошибка ${res.status}).`);
       return true;
     }
 

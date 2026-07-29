@@ -119,11 +119,11 @@ export class FinikPaymentProvider implements PaymentProvider {
       Amount: params.amount,
       CardType: 'FINIK_QR',
       PaymentId: sessionId,
-      // Страница возврата должна знать, какой платёж ждать, — дописываем session.
-      RedirectUrl: withSession(
-        params.successUrl ?? `${this.appUrl}/payment/callback`,
-        sessionId,
-      ),
+      // Ссылку возврата отдаём без query: Finik дописывает свои параметры через
+      // '?', и на URL с уже готовым query получается склейка вида
+      // `?session=…?paymentId=…`. Идентификатор платежа страница возврата берёт
+      // из добавленного Finik-ом `paymentId`.
+      RedirectUrl: withoutQuery(params.successUrl ?? `${this.appUrl}/payment/callback`),
       Data: {
         accountId: this.accountId,
         name_en: this.options.qrName ?? env.finik.qrName,
@@ -356,17 +356,13 @@ function readPemFile(path: string): string {
   return value;
 }
 
-/** Дописывает `?session=<id>` в URL возврата, если его там ещё нет. */
-function withSession(url: string, sessionId: string): string {
+/** Отрезает query и fragment — Finik дописывает свои параметры сам. */
+function withoutQuery(url: string): string {
   try {
     const parsed = new URL(url);
-    if (!parsed.searchParams.has('session')) {
-      parsed.searchParams.set('session', sessionId);
-    }
-    return parsed.toString();
+    return `${parsed.origin}${parsed.pathname}`;
   } catch {
-    const separator = url.includes('?') ? '&' : '?';
-    return `${url}${separator}session=${encodeURIComponent(sessionId)}`;
+    return url.split(/[?#]/)[0];
   }
 }
 
