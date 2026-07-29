@@ -11,6 +11,16 @@ function optional(key: string, fallback = ''): string {
 }
 
 /**
+ * Как {@link optional}, но пустая (или из одних пробелов) переменная считается
+ * незаданной и подменяется значением по умолчанию. На хостингах переменную
+ * часто создают с пустым значением — без этого дефолт бы терялся.
+ */
+function optionalNonBlank(key: string, fallback: string): string {
+  const value = (process.env[key] ?? '').trim();
+  return value === '' ? fallback : value;
+}
+
+/**
  * Нормализует PEM из переменной окружения: в `.env` перевод строки обычно не
  * сохраняется, поэтому строку вида `-----BEGIN...\n...` разворачиваем обратно в
  * многострочный PEM.
@@ -68,16 +78,16 @@ export const env = {
    * серверный адаптер `lib/payments/finik.ts`.
    */
   finik: {
-    baseUrl: optional('FINIK_BASE_URL', 'https://api.acquiring.averspay.kg'),
+    baseUrl: optionalNonBlank('FINIK_BASE_URL', 'https://api.acquiring.averspay.kg'),
     /**
      * Путь создания платежа. Документация Finik — `/v1/payment`; кабинет иногда
      * выдаёт другой URL. Путь участвует в подписи, поэтому он настраиваемый.
      */
-    paymentPath: optional('FINIK_PAYMENT_PATH', '/v1/payment'),
-    apiKey: optional('FINIK_API_KEY'),
-    accountId: optional('FINIK_ACCOUNT_ID'),
-    /** Имя QR/платежа, которое видит плательщик. */
-    qrName: optional('FINIK_QR_NAME', 'SayYes'),
+    paymentPath: optionalNonBlank('FINIK_PAYMENT_PATH', '/v1/payment'),
+    apiKey: optional('FINIK_API_KEY').trim(),
+    accountId: optional('FINIK_ACCOUNT_ID').trim(),
+    /** Имя QR/платежа, которое видит плательщик. Finik требует непустое. */
+    qrName: optionalNonBlank('FINIK_QR_NAME', 'SayYes'),
     privateKey: normalisePem(optional('FINIK_PRIVATE_KEY')),
     privateKeyPath: optional('FINIK_PRIVATE_KEY_PATH').trim(),
     webhookPublicKey: normalisePem(optional('FINIK_WEBHOOK_PUBLIC_KEY')),
