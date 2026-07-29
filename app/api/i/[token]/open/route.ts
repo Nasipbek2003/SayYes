@@ -13,12 +13,22 @@
  *    triggers the author's "приглашение открыли" notification (outbox, task
  *    9.x). The notification wiring is intentionally out of scope here.
  *
+ * **Author's own views are ignored.** When the request carries the session
+ * cookie of the invitation's own author (e.g. the author checks the link right
+ * after paying), nothing is recorded and no notification is enqueued: the
+ * "ссылку открыли" signal must mean *the recipient* opened it. The session is
+ * read straight from the request's `Cookie` header (no `next/headers`), so the
+ * endpoint stays public and usable from any context.
+ *
  * Graceful failures (Requirement 4.4, Property 7): an unknown / not-yet-active /
  * expired link maps to a 404 with a machine-readable `reason` instead of a 500,
  * so the public client can show the "ссылка недоступна" screen. The request
  * body is ignored; only the `User-Agent` header is recorded (for the author's
  * cabinet).
  */
+import { getAuthorIdFromCookie } from '@/lib/auth/guards';
+import { SESSION_COOKIE_NAME } from '@/lib/auth/session';
+import { invitationRepo } from '@/lib/repositories';
 import { enforcePublicRateLimit } from '@/lib/rate-limit/publicEndpoints';
 import {
   InvitationUnavailableError,
@@ -46,6 +56,14 @@ export async function POST(
   if (limited) return limited;
 
   const userAgent = _request.headers.get('user-agent');
+
+  // Свой просмотр автора не считается открытием: ни события, ни уведомления.
+  if (await isOwnAuthorView(_request, token)) {
+    return Response.json(
+      { ok: true, firstOpen: false, skipped: 'author' },
+      { status: 200 },
+    );
+  }
 
   try {
     const { firstOpen } = await invitationService.recordOpen(token, userAgent);
@@ -76,5 +94,39 @@ export async function POST(
       );
     }
     throw error;
+  }
+}
+
+/** Read the session cookie value out of a raw `Cookie` header. */
+function readSessionCookie(request: Request): string | undefined {
+  const header = request.headers.get('cookie');
+  if (!header) return undefined;
+  for (const part of header.split(';')) {
+    const eq = part.indexOf('=');
+    if (eq === -1) continue;
+    if (part.slice(0, eq).trim() !== SESSION_COOKIE_NAME) continue;
+    return decodeURIComponent(part.slice(eq + 1).trim());
+  }
+  return undefined;
+}
+
+/**
+ * True when the request comes from the invitation's own author (signed-in in
+ * the same browser). Any failure resolves to `false` — a doubtful case is
+ * treated as a normal guest open, never a dropped signal.
+ */
+async function isOwnAuthorView(request: Request, token: string): Promise<boolean> {
+  try {
+    const cookie = readSessionCookie(request);
+    if (!cookie) return false;
+    const authorId = await getAuthorIdFromCookie(cookie);
+    if (!authorId) return false;
+    const invitation = await invitationRepo.findByToken(token);
+    return invitation?.authorId === authorId;
+  } catch (error) {
+    logger.warn('open-author-check-failed', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return false;
   }
 }

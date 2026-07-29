@@ -769,6 +769,26 @@
   color: var(--text-on-cta);
 }
 
+/* Подсказка «отправь ссылку адресату» под блоком ссылки */
+.shareHint {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* Баннер «приглашение готово» сразу после публикации */
+.readyBanner {
+  margin-top: 18px;
+  padding: 12px 16px;
+  border-radius: var(--radius-chip);
+  border: 1.5px solid var(--accent);
+  background: var(--bg-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
 /* Статистика в строку */
 .statsRow {
   display: flex;

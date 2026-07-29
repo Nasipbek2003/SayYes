@@ -5,13 +5,19 @@
  *
  * Finik присылает автора сюда сразу после оплаты, но источник правды —
  * вебхук, который приходит на бэкенд отдельно. Поэтому страница опрашивает
- * `/api/payments/status`, пока платёж не станет SUCCEEDED, и затем ведёт
- * автора на ссылку приглашения (или в кабинет, если платёж был за подписку).
+ * `/api/payments/status`, пока платёж не станет SUCCEEDED.
+ *
+ * После успешной оплаты автор остаётся здесь: показываем готовую ссылку с
+ * кнопкой «Скопировать» и объясняем, что её нужно отправить адресату.
+ * Автоматически ссылку не открываем — открытие ссылки это событие адресата
+ * (оно попадает в статистику и в уведомление боту), и автор не должен
+ * «израсходовать» его сам.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
+import { ShareLink } from '@/app/components/ShareLink';
 import styles from '../payment.module.css';
 
 /** Интервал опроса и предел ожидания вебхука. */
@@ -55,6 +61,7 @@ export function CallbackClient() {
     sessionId ? null : 'Не хватает идентификатора платежа в ссылке.',
   );
   const [invitationUrl, setInvitationUrl] = useState<string | null>(null);
+  const [invitationId, setInvitationId] = useState<string | null>(null);
   const startedAt = useRef(Date.now());
 
   const poll = useCallback(async (): Promise<boolean> => {
@@ -86,9 +93,8 @@ export function CallbackClient() {
 
     if (data.status === 'SUCCEEDED') {
       setInvitationUrl(data.url);
+      setInvitationId(data.invitationId);
       setPhase('succeeded');
-      // Ссылка готова — сразу ведём автора на приглашение.
-      if (data.url) window.location.href = data.url;
       return true;
     }
 
@@ -141,30 +147,51 @@ export function CallbackClient() {
             <h1 className={styles.title}>Подтверждаем оплату</h1>
             <p className={styles.text}>
               Это занимает несколько секунд. Не закрывай страницу — как только банк
-              подтвердит платёж, откроем ссылку на приглашение.
+              подтвердит платёж, покажем ссылку на приглашение.
             </p>
           </>
         )}
 
         {phase === 'succeeded' && (
           <>
-            <h1 className={styles.title}>Оплата прошла</h1>
-            <p className={styles.text}>
-              {invitationUrl
-                ? 'Открываем твоё приглашение…'
-                : 'Подписка активна — публикуй приглашения без отдельной оплаты.'}
-            </p>
-            <div className={styles.actions}>
-              {invitationUrl ? (
-                <a className={styles.primary} href={invitationUrl}>
-                  Открыть приглашение
-                </a>
-              ) : (
-                <Link className={styles.primary} href="/me/invitations">
-                  В мои приглашения
-                </Link>
-              )}
-            </div>
+            <h1 className={styles.title}>
+              {invitationUrl ? 'Приглашение готово' : 'Оплата прошла'}
+            </h1>
+
+            {invitationUrl ? (
+              <>
+                <p className={styles.text}>
+                  Скопируй ссылку и отправь тому, кого приглашаешь.
+                </p>
+                <ShareLink url={invitationUrl} />
+                <p className={styles.text}>
+                  Уведомление придёт, когда он откроет ссылку и ответит.
+                </p>
+                <div className={styles.actions}>
+                  <Link
+                    className={styles.secondary}
+                    href={
+                      invitationId
+                        ? `/me/invitations/${encodeURIComponent(invitationId)}`
+                        : '/me/invitations'
+                    }
+                  >
+                    Мои приглашения
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className={styles.text}>
+                  Подписка активна — публикуй приглашения без отдельной оплаты.
+                </p>
+                <div className={styles.actions}>
+                  <Link className={styles.primary} href="/me/invitations">
+                    В мои приглашения
+                  </Link>
+                </div>
+              </>
+            )}
           </>
         )}
 

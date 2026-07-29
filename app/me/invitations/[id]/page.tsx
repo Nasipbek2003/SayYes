@@ -33,10 +33,15 @@ const RSVP_LABEL: Record<'yes' | 'no' | 'unknown', string> = {
 
 export default async function CabinetDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
+  // `?ready=1` — автор только что опубликовал приглашение (подписка покрыла
+  // оплату): подсказываем, что дальше нужно отправить ссылку адресату.
+  const justPublished = (await searchParams)?.['ready'] === '1';
 
   const authorId = await getCurrentAuthorId();
   if (!authorId) {
@@ -69,16 +74,27 @@ export default async function CabinetDetailPage({
         </span>
       </header>
 
+      {justPublished && detail.url && (
+        <p className={styles.readyBanner} role="status">
+          Приглашение готово. Скопируй ссылку и отправь тому, кого приглашаешь.
+        </p>
+      )}
+
       {/* Ссылка с кнопкой копирования */}
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Ссылка приглашения</h2>
         {detail.url ? (
-          <div className={styles.linkBlock}>
-            <a href={detail.url} className={styles.linkUrl} target="_blank" rel="noreferrer">
-              {detail.url}
-            </a>
-            <CopyLinkButton url={detail.url} />
-          </div>
+          <>
+            <div className={styles.linkBlock}>
+              <a href={detail.url} className={styles.linkUrl} target="_blank" rel="noreferrer">
+                {detail.url}
+              </a>
+              <CopyLinkButton url={detail.url} />
+            </div>
+            <p className={styles.shareHint}>
+              Скопируй ссылку и отправь тому, кого приглашаешь.
+            </p>
+          </>
         ) : (
           <p className={styles.muted}>Ссылка появится после создания приглашения.</p>
         )}

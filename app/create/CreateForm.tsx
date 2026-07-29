@@ -361,7 +361,12 @@ export function CreateForm({ template, themeId, isAuthed = false, botUsername }:
         notifyTelegram,
       });
       const result = await startCheckout(id, plan);
-      const next = result.checkoutUrl ?? result.url;
+      // Оплата: уходим на страницу провайдера. Активная подписка: платить не
+      // нужно, приглашение уже опубликовано — ведём автора на страницу
+      // приглашения в кабинете, где ссылку можно скопировать и отправить.
+      // Саму ссылку не открываем: её должен открыть адресат (Req 9.1).
+      const next = result.checkoutUrl
+        ?? (result.activated ? `/me/invitations/${encodeURIComponent(id)}?ready=1` : null);
       if (!next) throw new ApiError(500, 'Платёжная система не ответила ссылкой.');
       window.location.href = next;
     } catch (err) {
