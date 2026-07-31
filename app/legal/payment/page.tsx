@@ -1,10 +1,12 @@
 import Link from 'next/link';
 
-import { PLANS } from '@/lib/pricing';
+import { getPlans } from '@/lib/settings/appConfig';
 
 export const metadata = { title: 'Правила оплаты — SayYes' };
 
-export default function PaymentPage() {
+export default async function PaymentPage() {
+  const plans = await getPlans();
+
   return (
     <main style={{ maxWidth: 720, margin: '48px auto', padding: '0 20px 64px', color: 'var(--text)' }}>
       <Link href="/" style={{ fontSize: 13, color: 'var(--accent)', display: 'inline-block', marginBottom: 24 }}>← На главную</Link>
@@ -17,10 +19,10 @@ export default function PaymentPage() {
 
         <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 400, marginTop: 8 }}>Тарифы</h2>
         <ul style={{ paddingLeft: 20, color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <li><strong style={{ color: 'var(--text)' }}>{PLANS.single.title}</strong> — {PLANS.single.amount} сом за одно приглашение</li>
-          <li><strong style={{ color: 'var(--text)' }}>{PLANS.monthly.title}</strong> — {PLANS.monthly.amount} сом за 30 дней, приглашения в это время публикуются без отдельной оплаты</li>
+          <li><strong style={{ color: 'var(--text)' }}>{plans.single.title}</strong> — {plans.single.amount} сом за одно приглашение</li>
+          <li><strong style={{ color: 'var(--text)' }}>{plans.monthly.title}</strong> — {plans.monthly.amount} сом за {plans.monthly.periodDays} дней, приглашения в это время публикуются без отдельной оплаты</li>
         </ul>
-        <p style={{ color: 'var(--text-muted)' }}>Подписка не продлевается автоматически: по истечении 30 дней её нужно оплатить заново.</p>
+        <p style={{ color: 'var(--text-muted)' }}>Подписка не продлевается автоматически: по истечении срока её нужно оплатить заново.</p>
 
         <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 400, marginTop: 8 }}>Возврат</h2>
         <p style={{ color: 'var(--text-muted)' }}>После успешной активации ссылки (получения уникального URL) оплата возврату не подлежит. Если активация не произошла по техническим причинам на нашей стороне — обратитесь в поддержку.</p>

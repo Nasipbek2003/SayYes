@@ -19,7 +19,7 @@ import Link from 'next/link';
 
 import { getCurrentAuthorId } from '@/lib/auth/nextCookies';
 import { templateRegistry, TemplateNotFoundError } from '@/lib/templates/registry';
-import { env } from '@/lib/env';
+import { getBotUsername, getPlanList } from '@/lib/settings/appConfig';
 
 import { CreateForm } from './CreateForm';
 
@@ -56,6 +56,10 @@ export default async function CreatePage({
   // Auth is required only when saving/paying (handled client-side in CreateForm).
   const authorId = await getCurrentAuthorId();
 
+  // Тарифы и имя бота живут в БД (их меняет админ), а форма — клиентский
+  // компонент, поэтому передаём значения пропсами.
+  const [plans, botUsername] = await Promise.all([getPlanList(), getBotUsername()]);
+
   return (
     <main>
       <CreateForm
@@ -70,7 +74,8 @@ export default async function CreatePage({
         }}
         themeId={resolvedTheme}
         isAuthed={!!authorId}
-        botUsername={env.telegram.botUsername}
+        botUsername={botUsername}
+        plans={plans}
       />
     </main>
   );

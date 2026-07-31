@@ -7,10 +7,17 @@
  * Нативные контролы рисуются средствами ОС и выбиваются из дизайна,
  * поэтому здесь свой поповер: одна визуальная логика на всех платформах.
  */
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Calendar, Check, ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
+
+import {
+  StyledSelect as SharedSelect,
+  type SelectOption,
+} from '@/app/components/StyledSelect';
 
 import styles from './cabinet.module.css';
+
+export type { SelectOption };
 
 /** Закрывает поповер по клику вне контейнера и по Escape. */
 function useDismiss(open: boolean, close: () => void) {
@@ -40,120 +47,18 @@ function useDismiss(open: boolean, close: () => void) {
 
 /* ─────────────────────────── Выпадающий список ─────────────────────────── */
 
-export interface SelectOption<T extends string> {
-  value: T;
-  label: string;
-}
-
-interface StyledSelectProps<T extends string> {
+/**
+ * Селект кабинета — тонкая обёртка над общим {@link SharedSelect}: логика и
+ * оформление списка живут в одном месте (`app/components/StyledSelect`), здесь
+ * добавляется только раскладка в строке фильтров.
+ */
+export function StyledSelect<T extends string>(props: {
   value: T;
   options: Array<SelectOption<T>>;
   onChange: (value: T) => void;
-  /** Доступное имя контрола (aria-label). */
   label: string;
-}
-
-export function StyledSelect<T extends string>({
-  value,
-  options,
-  onChange,
-  label,
-}: StyledSelectProps<T>) {
-  const selectedIndex = Math.max(
-    0,
-    options.findIndex((opt) => opt.value === value),
-  );
-
-  const [open, setOpen] = useState(false);
-  const [highlight, setHighlight] = useState(selectedIndex);
-  const close = useCallback(() => setOpen(false), []);
-  const wrapRef = useDismiss(open, close);
-  const listId = useId();
-
-  function commit(index: number) {
-    const option = options[index];
-    if (option) onChange(option.value);
-    setOpen(false);
-  }
-
-  function onKeyDown(event: React.KeyboardEvent<HTMLButtonElement>) {
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      event.preventDefault();
-      if (!open) {
-        setHighlight(selectedIndex);
-        setOpen(true);
-        return;
-      }
-      const step = event.key === 'ArrowDown' ? 1 : -1;
-      setHighlight((prev) => (prev + step + options.length) % options.length);
-      return;
-    }
-
-    if (event.key === 'Home' || event.key === 'End') {
-      if (!open) return;
-      event.preventDefault();
-      setHighlight(event.key === 'Home' ? 0 : options.length - 1);
-      return;
-    }
-
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      if (open) commit(highlight);
-      else {
-        setHighlight(selectedIndex);
-        setOpen(true);
-      }
-    }
-  }
-
-  return (
-    <div className={styles.selectWrap} ref={wrapRef}>
-      <button
-        type="button"
-        className={`${styles.selectBtn}${open ? ` ${styles.selectBtnOpen}` : ''}`}
-        role="combobox"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={open ? listId : undefined}
-        aria-activedescendant={open ? `${listId}-${highlight}` : undefined}
-        aria-label={label}
-        onClick={() => {
-          setHighlight(selectedIndex);
-          setOpen((prev) => !prev);
-        }}
-        onKeyDown={onKeyDown}
-      >
-        <span className={styles.selectValue}>{options[selectedIndex]?.label}</span>
-        <ChevronDown size={15} className={styles.fieldIcon} aria-hidden="true" />
-      </button>
-
-      {open && (
-        <ul className={styles.menu} role="listbox" id={listId} aria-label={label}>
-          {options.map((option, index) => {
-            const isSelected = option.value === value;
-            const classes = [styles.menuItem];
-            if (index === highlight) classes.push(styles.menuItemActive);
-            if (isSelected) classes.push(styles.menuItemSelected);
-
-            return (
-              <li
-                key={option.value}
-                id={`${listId}-${index}`}
-                role="option"
-                aria-selected={isSelected}
-                className={classes.join(' ')}
-                onPointerEnter={() => setHighlight(index)}
-                onClick={() => commit(index)}
-              >
-                <span>{option.label}</span>
-                {isSelected && <Check size={14} aria-hidden="true" />}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
-  );
+}) {
+  return <SharedSelect {...props} className={styles.selectWrap} />;
 }
 
 /* ───────────────────────────── Календарь ───────────────────────────── */

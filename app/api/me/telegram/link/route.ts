@@ -16,6 +16,7 @@
 import { authErrorToResponse } from '@/lib/auth';
 import { getCurrentAuthor, requireAuthor } from '@/lib/auth/nextCookies';
 import { buildStartDeepLink, issueLinkCode } from '@/lib/notifications/telegramLink';
+import { getBotUsername } from '@/lib/settings/appConfig';
 
 export const runtime = 'nodejs';
 
@@ -37,7 +38,12 @@ export async function POST(): Promise<Response> {
   }
 
   const code = await issueLinkCode(authorId);
-  const deepLink = buildStartDeepLink(code);
+  // Имя бота берём из настроек в БД (админ может поменять его из панели),
+  // с откатом на переменную окружения.
+  const botUsername = await getBotUsername();
+  const deepLink = botUsername
+    ? `https://t.me/${botUsername}?start=${encodeURIComponent(code)}`
+    : buildStartDeepLink(code);
 
   return Response.json({
     alreadyLinked: false,

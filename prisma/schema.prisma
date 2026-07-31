@@ -10,13 +10,45 @@ datasource db {
 model Author {
   id             String           @id @default(cuid())
   email          String?          @unique
+  /**
+   * Короткий логин для входа без email (нужен служебным аккаунтам — админам).
+   * Обычные авторы регистрируются по email и остаются без логина.
+   */
+  login          String?          @unique
   passwordHash   String?
+  /** Роль: обычный пользователь или администратор панели `/admin`. */
+  role           Role             @default(USER)
   telegramChatId String?          @unique
   createdAt      DateTime         @default(now())
   invitations    Invitation[]
   magicLinks     MagicLinkToken[]
   payments       Payment[]
   subscriptions  Subscription[]
+
+  @@index([role])
+}
+
+/**
+ * Настройки приложения в БД: секреты подписи сессий, пароли интеграций,
+ * переключатели. Живут в базе, а не только в окружении, чтобы значение
+ * переживало перезапуск и редеплой (иначе сгенерированный на старте секрет
+ * менялся бы и все сессии разлогинивались).
+ *
+ * Значения с `isSecret = true` хранятся зашифрованными (AES-256-GCM) —
+ * см. `lib/settings/store.ts`. В панель они наружу не отдаются, только маска.
+ */
+model Setting {
+  key         String   @id
+  value       String
+  isSecret    Boolean  @default(false)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum Role {
+  USER
+  ADMIN
 }
 
 model MagicLinkToken {

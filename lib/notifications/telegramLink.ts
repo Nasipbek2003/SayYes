@@ -98,10 +98,11 @@ export async function verifyLinkCode(
  * can still surface the raw code (e.g. for a manual `/start <code>` flow).
  */
 export function buildStartDeepLink(code: string): string | null {
-  const username = (process.env.TELEGRAM_BOT_USERNAME || env.telegram.botUsername).replace(
-    /^@/,
-    '',
-  );
+  // Обрезаем пробелы и `@` до проверки на пустоту: переменная вида " " иначе
+  // считается заданной и даёт нерабочую ссылку `t.me/ ?start=...`.
+  const username = (process.env.TELEGRAM_BOT_USERNAME || env.telegram.botUsername)
+    .trim()
+    .replace(/^@/, '');
   if (!username) return null;
   return `https://t.me/${username}?start=${encodeURIComponent(code)}`;
 }

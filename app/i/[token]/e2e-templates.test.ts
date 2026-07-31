@@ -71,6 +71,7 @@ import {
   type PaymentSubscriptionRepo,
 } from '@/lib/services/payment';
 import { MockPaymentProvider } from '@/lib/payments/provider';
+import { DEFAULT_PLANS } from '@/lib/pricing';
 import { ScenarioEngine } from '@/lib/scenario/engine';
 import {
   initialRunawayState,
@@ -317,6 +318,8 @@ function makeHarness() {
     subscriptionRepo,
     invitationService,
     appUrl: 'http://localhost:3000',
+    // Статические тарифы: сценарий не должен зависеть от значений в БД.
+    loadPlans: async () => DEFAULT_PLANS,
   });
 
   return {

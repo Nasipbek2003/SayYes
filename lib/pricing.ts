@@ -1,12 +1,17 @@
 /**
- * Тарифы SayYes — единственный источник правды по ценам.
+ * Тарифы SayYes — типы и значения по умолчанию.
  *
  * Два варианта оплаты:
- *  - `single`  — разовая оплата одного приглашения, 100 сом;
- *  - `monthly` — подписка на месяц, 300 сом: 30 дней публикуй приглашения
- *    без отдельной оплаты.
+ *  - `single`  — разовая оплата одного приглашения;
+ *  - `monthly` — подписка: 30 дней публикуй приглашения без отдельной оплаты.
  *
  * Суммы — в целых сомах (KGS), как их принимает Finik в поле `Amount`.
+ *
+ * ВАЖНО: действующие цены живут в таблице `Setting` и меняются из админ-панели —
+ * читать их надо через `getPlans()` из `lib/settings/appConfig.ts`. Здесь только
+ * значения по умолчанию (когда в базе ничего не задано) и типы. Этот модуль
+ * намеренно не ходит в БД: его импортируют клиентские компоненты, а Prisma в
+ * браузерный бандл попадать не должна.
  */
 import type { PaymentPlan } from '@prisma/client';
 
@@ -29,7 +34,8 @@ export interface Plan {
   description: string;
 }
 
-export const PLANS: Record<PlanId, Plan> = {
+/** Значения по умолчанию: применяются, пока в таблице `Setting` ничего нет. */
+export const DEFAULT_PLANS: Record<PlanId, Plan> = {
   single: {
     id: 'single',
     prismaPlan: 'SINGLE',
@@ -50,13 +56,15 @@ export const PLANS: Record<PlanId, Plan> = {
   },
 };
 
-/** Список планов в порядке показа в UI. */
-export const PLAN_LIST: Plan[] = [PLANS.single, PLANS.monthly];
-
-/** Сумма к списанию по плану, в целых сомах. */
+/**
+ * Суммы по умолчанию, в целых сомах.
+ *
+ * Нужны там, где действующая цена не важна: в юнит-тестах и как запасное
+ * значение. Для показа и списания используйте `getPlans()`.
+ */
 export const PLAN_AMOUNTS: Record<PlanId, number> = {
-  single: PLANS.single.amount,
-  monthly: PLANS.monthly.amount,
+  single: DEFAULT_PLANS.single.amount,
+  monthly: DEFAULT_PLANS.monthly.amount,
 };
 
 /** Валидация произвольного значения как {@link PlanId}. */

@@ -6,7 +6,7 @@
 import Link from 'next/link';
 import { Check, LayoutTemplate, ArrowRight } from 'lucide-react';
 import { buildGallery } from '@/lib/gallery/gallery';
-import { PLANS } from '@/lib/pricing';
+import { getPlans } from '@/lib/settings/appConfig';
 import { HowItWorksDemo } from './components/HowItWorksDemo';
 import { PhoneVideo } from './components/PhoneVideo';
 import { TemplateGalleryCard } from './components/TemplateGalleryCard';
@@ -26,8 +26,10 @@ import {
 } from './components/LandingIcons';
 import styles from './page.module.css';
 
-export default function HomePage() {
+export default async function HomePage() {
   const templates = buildGallery();
+  // Цены задаются в админ-панели и лежат в БД, поэтому страница динамическая.
+  const plans = await getPlans();
 
   return (
     <>
@@ -229,8 +231,8 @@ export default function HomePage() {
           </p>
           <div className={styles.pricingGrid}>
             <div className={styles.pricingCard}>
-              <h3 className={styles.planName}>{PLANS.single.title}</h3>
-              <div className={styles.planPrice}>{PLANS.single.amount} <span>сом</span></div>
+              <h3 className={styles.planName}>{plans.single.title}</h3>
+              <div className={styles.planPrice}>{plans.single.amount} <span>сом</span></div>
               <ul className={styles.planFeatures}>
                 <li><Check size={15} strokeWidth={2.2} /> Одно приглашение</li>
                 <li><Check size={15} strokeWidth={2.2} /> Интерактивный сценарий</li>
@@ -242,9 +244,9 @@ export default function HomePage() {
             </div>
             <div className={`${styles.pricingCard} ${styles['pricingCard--featured']}`}>
               <span className={styles.planBadge}>Выгодно от 3 приглашений</span>
-              <h3 className={styles.planName}>{PLANS.monthly.title}</h3>
+              <h3 className={styles.planName}>{plans.monthly.title}</h3>
               <div className={styles.planPrice}>
-                {PLANS.monthly.amount} <span>сом / месяц</span>
+                {plans.monthly.amount} <span>сом / месяц</span>
               </div>
               <ul className={styles.planFeatures}>
                 <li><Check size={15} strokeWidth={2.2} /> Сколько угодно приглашений</li>

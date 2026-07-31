@@ -54,6 +54,24 @@ export const env = {
   databaseUrl: optional('DATABASE_URL'),
   sessionSecret: optional('SESSION_SECRET'),
 
+  /**
+   * Админ-панель `/admin`. Отдельные от авторских креденшелы: у сотрудника
+   * поддержки может не быть аккаунта автора, а у автора не должно появляться
+   * прав администратора.
+   *
+   * Пароль задаётся ЛИБО хэшем `ADMIN_PASSWORD_HASH` (формат `salt:hash` из
+   * `lib/auth/password.ts` — так и надо в бою), ЛИБО открытым
+   * `ADMIN_PASSWORD` (только для локальной разработки). Если ничего не
+   * задано, вход в панель отключён целиком.
+   */
+  admin: {
+    email: optional('ADMIN_EMAIL').trim().toLowerCase(),
+    passwordHash: optional('ADMIN_PASSWORD_HASH').trim(),
+    password: optional('ADMIN_PASSWORD'),
+    /** Свой секрет подписи admin-сессии; по умолчанию — SESSION_SECRET. */
+    sessionSecret: optional('ADMIN_SESSION_SECRET'),
+  },
+
   payment: {
     /** 'finik' — реальный эквайринг, 'mock' — заглушка без списания денег. */
     provider: optional('PAYMENT_PROVIDER', 'mock'),
@@ -94,11 +112,17 @@ export const env = {
     webhookPublicKeyPath: optional('FINIK_WEBHOOK_PUBLIC_KEY_PATH').trim(),
   },
 
+  /**
+   * Telegram-бот. Значения обрезаются, а `botUsername` дополнительно теряет
+   * ведущую `@`: переменная из одних пробелов должна считаться незаданной,
+   * иначе deep-link привязки собирается как `t.me/ ?start=...` и молча не
+   * работает.
+   */
   telegram: {
-    botToken: optional('TELEGRAM_BOT_TOKEN'),
-    webhookSecret: optional('TELEGRAM_WEBHOOK_SECRET'),
+    botToken: optional('TELEGRAM_BOT_TOKEN').trim(),
+    webhookSecret: optional('TELEGRAM_WEBHOOK_SECRET').trim(),
     /** Bot username (without @) used to build t.me deep-links for linking. */
-    botUsername: optional('TELEGRAM_BOT_USERNAME'),
+    botUsername: optional('TELEGRAM_BOT_USERNAME').trim().replace(/^@/, ''),
   },
 
   /**

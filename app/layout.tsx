@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Header } from './components/Header';
+import { HideOnAdmin } from './components/HideOnAdmin';
 
 export const metadata: Metadata = {
   title: 'SayYes — сервис интерактивных приглашений',
@@ -47,7 +48,9 @@ export default function RootLayout({
       </head>
       <body>
         <div className="page-wrap">
-          <Header />
+          <HideOnAdmin>
+            <Header />
+          </HideOnAdmin>
           {children}
         </div>
       </body>

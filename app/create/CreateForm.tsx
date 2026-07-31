@@ -22,7 +22,7 @@ import {
 } from '@/lib/create/form';
 import { AUTOSAVE_DEBOUNCE_MS, Debouncer } from '@/lib/create/autosave';
 
-import { PLAN_LIST, PLANS, type PlanId } from '@/lib/pricing';
+import { DEFAULT_PLANS, type Plan, type PlanId } from '@/lib/pricing';
 
 import {
   ApiError,
@@ -35,6 +35,7 @@ import {
 } from './client';
 import { PreviewPane } from './PreviewPane';
 import { StickerMedia } from '@/app/components/StickerMedia';
+import { StyledSelect } from '@/app/components/StyledSelect';
 import styles from './create.module.css';
 
 export interface CreateFormTemplate {
@@ -55,6 +56,8 @@ export interface CreateFormProps {
   isAuthed?: boolean;
   /** Telegram bot username (without @) for the "open the bot" link. */
   botUsername?: string;
+  /** Действующие тарифы из БД; при отсутствии — значения по умолчанию. */
+  plans?: Plan[];
 }
 
 /**
@@ -105,7 +108,13 @@ type MobileView = 'edit' | 'preview';
 /** Telegram-ник: статус проверки доступа бота к аккаунту. */
 type TgStatus = 'idle' | 'checking' | 'invalid' | 'linked' | 'not_linked';
 
-export function CreateForm({ template, themeId, isAuthed = false, botUsername }: CreateFormProps) {
+export function CreateForm({
+  template,
+  themeId,
+  isAuthed = false,
+  botUsername,
+  plans = [DEFAULT_PLANS.single, DEFAULT_PLANS.monthly],
+}: CreateFormProps) {
   const router = useRouter();
 
   const [step, setStep] = useState(1);
@@ -567,6 +576,7 @@ export function CreateForm({ template, themeId, isAuthed = false, botUsername }:
         <PlanPicker
           busy={activating}
           error={error}
+          plans={plans}
           onClose={() => setPlanOpen(false)}
           onChoose={(plan) => void onCheckout(plan)}
         />
@@ -576,21 +586,26 @@ export function CreateForm({ template, themeId, isAuthed = false, botUsername }:
 }
 
 /**
- * Выбор тарифа перед оплатой: разовая оплата приглашения или подписка на месяц.
- * Цены берутся из единственного источника правды — `lib/pricing.ts`.
+ * Выбор тарифа перед оплатой: разовая оплата приглашения или подписка.
+ *
+ * Цены приходят пропсом: они лежат в БД и меняются из админ-панели, а
+ * клиентский компонент в базу ходить не может.
  */
 function PlanPicker({
   busy,
   error,
+  plans,
   onChoose,
   onClose,
 }: {
   busy: boolean;
   error: string | null;
+  plans: Plan[];
   onChoose: (plan: PlanId) => void;
   onClose: () => void;
 }) {
   const [selected, setSelected] = useState<PlanId>('single');
+  const selectedPlan = plans.find((plan) => plan.id === selected) ?? plans[0];
 
   return (
     <div
@@ -609,7 +624,7 @@ function PlanPicker({
         </p>
 
         <div className={styles.tiers}>
-          {PLAN_LIST.map((plan) => {
+          {plans.map((plan) => {
             const isActive = plan.id === selected;
             return (
               <button
@@ -625,7 +640,9 @@ function PlanPicker({
                 <span className={styles.tierName}>{plan.title}</span>
                 <span className={styles.tierPrice}>
                   {plan.amount} сом
-                  {plan.periodDays ? <span className={styles.planPeriod}> / месяц</span> : null}
+                  {plan.periodDays ? (
+                    <span className={styles.planPeriod}> / {plan.periodDays} дн.</span>
+                  ) : null}
                 </span>
                 <ul className={styles.tierFeatures}>
                   {plan.id === 'single' ? (
@@ -637,7 +654,7 @@ function PlanPicker({
                   ) : (
                     <>
                       <li>Сколько угодно приглашений</li>
-                      <li>30 дней доступа</li>
+                      <li>{plan.periodDays} дней доступа</li>
                       <li>Все функции шаблонов</li>
                     </>
                   )}
@@ -656,7 +673,7 @@ function PlanPicker({
             disabled={busy}
             onClick={() => onChoose(selected)}
           >
-            {busy ? 'Переходим к оплате…' : `Оплатить ${PLANS[selected].amount} сом`}
+            {busy ? 'Переходим к оплате…' : `Оплатить ${selectedPlan.amount} сом`}
           </button>
         </div>
 
@@ -719,17 +736,15 @@ function FieldControl({
     return (
       <div className={styles.field} onFocusCapture={onFocus}>
         {label}
-        <div className={styles.selectWrap}>
-          <select
-            className={styles.select}
-            value={current}
-            onChange={(e) => onChange(e.target.value)}
-          >
-            {options.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
+        {/* Свой список вместо нативного <select>: системное меню ОС выбивается
+            из оформления формы. */}
+        <StyledSelect
+          value={current}
+          options={options.map((opt) => ({ value: opt.value, label: opt.label }))}
+          onChange={(next) => onChange(next)}
+          label={field.label}
+          className={styles.selectWrap}
+        />
         {error ? <span className={styles.error}>{error}</span> : null}
       </div>
     );

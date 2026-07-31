@@ -32,7 +32,7 @@ import type { Invitation, Payment, Subscription } from '@prisma/client';
 
 import { AuthError } from '@/lib/auth/guards';
 import type { CheckoutResult, PaymentProvider } from '@/lib/payments/provider';
-import { PLAN_AMOUNTS } from '@/lib/pricing';
+import { DEFAULT_PLANS, PLAN_AMOUNTS } from '@/lib/pricing';
 import {
   PaymentService,
   PaymentServiceError,
@@ -215,6 +215,9 @@ function buildService(deps: {
     invitationService:
       deps.invitationService ?? makeFakeActivationService().service,
     appUrl: 'http://localhost:3000',
+    // Тарифы подставляем статикой: рабочий загрузчик читает их из БД, а юнит-тест
+    // не должен зависеть от базы и от того, менял ли админ цены.
+    loadPlans: async () => DEFAULT_PLANS,
   });
 }
 

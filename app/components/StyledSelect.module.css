@@ -1,0 +1,133 @@
+/* ============================================================
+   Кастомный выпадающий список — общий для сайта и админ-панели.
+
+   Нативный <select> рисует список средствами ОС: на Windows это
+   белое системное меню с синей подсветкой, которое выбивается из
+   любого нашего оформления. Здесь свой поповер, поэтому вид один
+   на всех платформах.
+
+   Палитра задаётся переменными на .wrap: по умолчанию «Тёплый
+   персик», модификатор .dark — тёмная тема панели.
+   ============================================================ */
+
+.wrap {
+  --sel-bg:           var(--card, #fff);
+  --sel-border:       var(--border, #edd9ce);
+  --sel-border-hover: var(--accent-decor, #ff9a76);
+  --sel-border-open:  var(--accent, #e8625a);
+  --sel-text:         var(--text, #3d2c2a);
+  --sel-muted:        var(--text-muted, #8a736c);
+  --sel-menu-bg:      var(--card, #fff);
+  --sel-item-hover:   var(--bg, #fff6ef);
+  --sel-accent:       var(--accent, #e8625a);
+  --sel-radius:       var(--radius-chip, 8px);
+  --sel-shadow:       var(--shadow-lift, 0 20px 48px rgba(232, 98, 90, 0.16));
+
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.dark {
+  --sel-bg:           #25293c;
+  --sel-border:       rgba(231, 227, 252, 0.1);
+  --sel-border-hover: #7367f0;
+  --sel-border-open:  #7367f0;
+  --sel-text:         #e7e3fc;
+  --sel-muted:        #7983bb;
+  --sel-menu-bg:      #2f3349;
+  --sel-item-hover:   #383d5b;
+  --sel-accent:       #a79cf7;
+  --sel-radius:       8px;
+  --sel-shadow:       0 12px 32px rgba(10, 14, 25, 0.55);
+}
+
+.trigger {
+  appearance: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--sel-border);
+  border-radius: var(--sel-radius);
+  background: var(--sel-bg);
+  color: var(--sel-text);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  transition: border-color var(--dur-fast, 150ms);
+}
+
+.trigger:hover {
+  border-color: var(--sel-border-hover);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--sel-border-open);
+  outline-offset: 1px;
+}
+
+.triggerOpen {
+  border-color: var(--sel-border-open);
+}
+
+.value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.placeholder {
+  color: var(--sel-muted);
+}
+
+.icon {
+  flex: none;
+  color: var(--sel-muted);
+  transition: transform var(--dur-fast, 150ms);
+}
+
+.iconOpen {
+  transform: rotate(180deg);
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 60;
+  min-width: 100%;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 6px;
+  list-style: none;
+  border: 1px solid var(--sel-border);
+  border-radius: var(--sel-radius);
+  background: var(--sel-menu-bg);
+  box-shadow: var(--sel-shadow);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 10px;
+  border-radius: calc(var(--sel-radius) - 2px);
+  font-size: 13px;
+  color: var(--sel-text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.itemActive {
+  background: var(--sel-item-hover);
+}
+
+.itemSelected {
+  color: var(--sel-accent);
+  font-weight: 600;
+}

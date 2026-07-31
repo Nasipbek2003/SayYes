@@ -29,7 +29,13 @@ import type { PaymentEvent, PaymentProvider } from '@/lib/payments/provider';
 import { invitationService as defaultInvitationService } from '@/lib/services/invitation';
 import type { ActivationResult } from '@/lib/services/invitation';
 import { env } from '@/lib/env';
-import { PLANS, planIdFromPrisma, type PlanId } from '@/lib/pricing';
+import {
+  DEFAULT_PLANS,
+  planIdFromPrisma,
+  type Plan,
+  type PlanId,
+} from '@/lib/pricing';
+import { getPlans } from '@/lib/settings/appConfig';
 import type { Tier } from '@prisma/client';
 
 export { parsePlan } from '@/lib/pricing';
@@ -41,10 +47,15 @@ export type { PlanId } from '@/lib/pricing';
  */
 const PAID_TIER: Tier = 'PREMIUM';
 
-/** Сумма к списанию по плану, в целых сомах. */
+/**
+ * Суммы по умолчанию, в целых сомах.
+ *
+ * @deprecated Действующие цены лежат в таблице `Setting` — читайте `getPlans()`
+ * из `lib/settings/appConfig.ts`. Здесь только запасные значения.
+ */
 export const PLAN_AMOUNTS: Record<PlanId, number> = {
-  single: PLANS.single.amount,
-  monthly: PLANS.monthly.amount,
+  single: DEFAULT_PLANS.single.amount,
+  monthly: DEFAULT_PLANS.monthly.amount,
 };
 
 /** Error carrying the HTTP status the handler should return for domain failures. */
@@ -123,6 +134,12 @@ export interface PaymentServiceDeps {
   invitationService: PaymentActivationService;
   /** Базовый URL приложения — из него строится RedirectUrl провайдера. */
   appUrl?: string;
+  /**
+   * Загрузчик действующих тарифов. По умолчанию читает их из таблицы `Setting`
+   * (администратор меняет цены из панели); в тестах подставляются статические
+   * значения, чтобы не ходить в БД.
+   */
+  loadPlans?: () => Promise<Record<PlanId, Plan>>;
 }
 
 /**
@@ -137,6 +154,7 @@ export class PaymentService {
   private readonly subscriptionRepo: PaymentSubscriptionRepo;
   private readonly invitationService: PaymentActivationService;
   private readonly appUrl: string;
+  private readonly loadPlans: () => Promise<Record<PlanId, Plan>>;
 
   constructor(deps: PaymentServiceDeps) {
     this.provider = deps.provider;
@@ -145,6 +163,7 @@ export class PaymentService {
     this.subscriptionRepo = deps.subscriptionRepo;
     this.invitationService = deps.invitationService;
     this.appUrl = (deps.appUrl ?? env.appUrl).replace(/\/$/, '');
+    this.loadPlans = deps.loadPlans ?? getPlans;
   }
 
   /**
@@ -190,7 +209,9 @@ export class PaymentService {
       };
     }
 
-    const { amount, currency, description } = PLANS[plan];
+    // Цену берём в момент оплаты: администратор мог изменить её в панели.
+    const plans = await this.loadPlans();
+    const { amount, currency, description } = plans[plan];
 
     // Persist the resolved tier on the invitation (drives runtime features).
     await this.invitationRepo.update(invitationId, { tier: PAID_TIER });
@@ -210,7 +231,7 @@ export class PaymentService {
     await this.paymentRepo.create({
       invitationId,
       authorId,
-      plan: PLANS[plan].prismaPlan,
+      plan: plans[plan].prismaPlan,
       provider: this.provider.name,
       sessionId,
       amount,
@@ -265,7 +286,7 @@ export class PaymentService {
       // Подписка: продлеваем срок доступа автора.
       let subscriptionUntil: string | undefined;
       if (planIdFromPrisma(payment.plan) === 'monthly') {
-        const days = PLANS.monthly.periodDays ?? 30;
+        const days = (await this.loadPlans()).monthly.periodDays ?? 30;
         const subscription = await this.subscriptionRepo.extend(payment.authorId, days);
         subscriptionUntil = subscription.expiresAt.toISOString();
       }
