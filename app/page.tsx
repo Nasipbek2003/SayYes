@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Check, LayoutTemplate, ArrowRight } from 'lucide-react';
 import { buildGallery } from '@/lib/gallery/gallery';
 import { getPlans } from '@/lib/settings/appConfig';
+import { getHeroVideo } from '@/lib/storage/stickers';
 import { HowItWorksDemo } from './components/HowItWorksDemo';
 import { PhoneVideo } from './components/PhoneVideo';
 import { TemplateGalleryCard } from './components/TemplateGalleryCard';
@@ -28,8 +29,9 @@ import styles from './page.module.css';
 
 export default async function HomePage() {
   const templates = buildGallery();
-  // Цены задаются в админ-панели и лежат в БД, поэтому страница динамическая.
-  const plans = await getPlans();
+  // Цены и медиа задаются в админ-панели и лежат в БД, поэтому страница
+  // динамическая.
+  const [plans, heroVideo] = await Promise.all([getPlans(), getHeroVideo()]);
 
   return (
     <>
@@ -74,7 +76,7 @@ export default async function HomePage() {
         <div className={styles.heroVisual}>
           <div className={styles.phoneMock}>
             <div className={styles.phoneMockInner}>
-              <PhoneVideo />
+              <PhoneVideo src={heroVideo.src} poster={heroVideo.poster} />
             </div>
           </div>
           {/* Тонкий декоративный акцент — статичный, не мигающие эмодзи */}

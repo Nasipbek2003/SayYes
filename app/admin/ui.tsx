@@ -46,16 +46,6 @@ export function dateTime(value: Date | string | null | undefined): string {
   });
 }
 
-export function dateOnly(value: Date | string | null | undefined): string {
-  if (!value) return '—';
-  const d = typeof value === 'string' ? new Date(value) : value;
-  return d.toLocaleDateString('ru-RU', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-}
-
 /** Короткий id для таблиц: cuid целиком нечитаем. */
 export function shortId(value: string | null | undefined): string {
   if (!value) return '—';

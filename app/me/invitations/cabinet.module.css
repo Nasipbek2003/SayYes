@@ -296,13 +296,14 @@
   flex-wrap: wrap;
 }
 
-/* Кастомный select: триггер + меню */
+/* Раскладка селекта в строке фильтров. Сам список и его оформление живут в
+   общем компоненте app/components/StyledSelect. */
 .selectWrap {
   position: relative;
   flex-shrink: 0;
 }
 
-.selectBtn,
+/* Поле даты; .selectBtnOpen переиспользуется им в открытом состоянии. */
 .dateBtn {
   appearance: none;
   display: flex;
@@ -321,12 +322,10 @@
   transition: border-color 0.15s;
 }
 
-.selectBtn:hover,
 .dateBtn:hover {
   border-color: var(--accent-decor);
 }
 
-.selectBtn:focus-visible,
 .dateBtn:focus-visible {
   outline: none;
   border-color: var(--accent);
@@ -334,52 +333,6 @@
 
 .selectBtnOpen {
   border-color: var(--accent);
-}
-
-.selectValue {
-  white-space: nowrap;
-}
-
-.fieldIcon {
-  color: var(--text-muted);
-  flex-shrink: 0;
-  margin-left: auto;
-}
-
-.menu {
-  position: absolute;
-  z-index: 30;
-  top: calc(100% + 6px);
-  left: 0;
-  min-width: 100%;
-  list-style: none;
-  padding: 6px;
-  border-radius: var(--radius-btn);
-  border: 1.5px solid var(--border);
-  background: var(--card);
-  box-shadow: 0 12px 28px rgba(61, 44, 42, 0.12);
-}
-
-.menuItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 13px;
-  color: var(--text);
-  padding: 8px 10px;
-  border-radius: var(--radius-chip);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.menuItemActive {
-  background: var(--bg);
-}
-
-.menuItemSelected {
-  color: var(--accent);
-  font-weight: 500;
 }
 
 /* Кастомное поле даты */

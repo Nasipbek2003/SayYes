@@ -132,12 +132,6 @@ export interface GalleryTemplateView {
   demoHref: string;
 }
 
-/** A seasonal pack together with the templates it contains. */
-export interface SeasonalSection {
-  season: SeasonView;
-  templates: GalleryTemplateView[];
-}
-
 /** Base path of the interactive template demo (try as guest, no payment). */
 export const DEMO_PATH = '/demo';
 
@@ -229,22 +223,4 @@ export function buildGallery(
   return registry.list().map(toTemplateView);
 }
 
-/**
- * Group templates into seasonal packs (Valentine's, 8 March, New Year, wedding)
- * in {@link SEASONS} order. Packs with no matching template are omitted, so the
- * gallery can render "Сезонные подборки" sections that are always non-empty.
- * Builds from the same view models as {@link buildGallery}.
- */
-export function buildSeasonalSections(
-  registry: TemplateRegistry = galleryRegistry,
-): SeasonalSection[] {
-  const views = buildGallery(registry);
-  const sections: SeasonalSection[] = [];
-  for (const season of SEASONS) {
-    const templates = views.filter((view) =>
-      view.seasons.some((s) => s.id === season.id),
-    );
-    if (templates.length > 0) sections.push({ season, templates });
-  }
-  return sections;
-}
+

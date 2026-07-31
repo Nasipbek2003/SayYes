@@ -17,7 +17,6 @@
  * docs).
  */
 import type { PlanId } from '@/lib/pricing';
-import type { PreviewPayload } from '@/lib/services/invitation';
 
 /** Thrown when an author API call returns 401 (no/expired session). */
 export class UnauthorizedError extends Error {
@@ -116,17 +115,6 @@ export async function uploadPhoto(
   return parseJson<{ url: string }>(res);
 }
 
-/** Fetch the preview payload for the draft (Requirement 2.5). */
-export async function fetchPreview(
-  id: string,
-  fetchImpl: typeof fetch = fetch,
-): Promise<PreviewPayload> {
-  const res = await fetchImpl(
-    `/api/invitations/${encodeURIComponent(id)}/preview`,
-  );
-  return parseJson<PreviewPayload>(res);
-}
-
 /** Результат старта оплаты: ссылка на платёжную страницу либо готовая публикация. */
 export interface CheckoutStarted {
   checkoutUrl?: string;
@@ -156,18 +144,6 @@ export async function startCheckout(
     },
   );
   return parseJson<CheckoutStarted>(res);
-}
-
-/** Dev-only: activate a draft without payment. */
-export async function devActivate(
-  id: string,
-  fetchImpl: typeof fetch = fetch,
-): Promise<{ url: string; token: string }> {
-  const res = await fetchImpl(
-    `/api/invitations/${encodeURIComponent(id)}/dev-activate`,
-    { method: 'POST' },
-  );
-  return parseJson<{ url: string; token: string }>(res);
 }
 
 /** Result of a Telegram-nickname reachability check. */

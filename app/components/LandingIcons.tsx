@@ -58,9 +58,7 @@ export function FeatureIconPreview() {
   return <Link2 {...iconStyle('#FF9A76', 32)} />;
 }
 
-export function HeroHeart() {
-  return <Heart fill="#E8625A" color="#E8625A" size={56} strokeWidth={0} />;
-}
+
 
 export function HeroSparkle() {
   return <Sparkles {...iconStyle('#FF9A76', 24)} />;

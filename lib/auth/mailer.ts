@@ -7,7 +7,6 @@
  * When `RESEND_API_KEY` is set the `ResendMailer` is used instead — it
  * delivers real emails via the Resend API (https://resend.com).
  */
-import { env } from '@/lib/env';
 
 export interface MagicLinkEmail {
   to: string;

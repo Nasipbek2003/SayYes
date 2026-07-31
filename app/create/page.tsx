@@ -20,6 +20,7 @@ import Link from 'next/link';
 import { getCurrentAuthorId } from '@/lib/auth/nextCookies';
 import { templateRegistry, TemplateNotFoundError } from '@/lib/templates/registry';
 import { getBotUsername, getPlanList } from '@/lib/settings/appConfig';
+import { getStickerCatalog } from '@/lib/storage/stickers';
 
 import { CreateForm } from './CreateForm';
 
@@ -58,7 +59,11 @@ export default async function CreatePage({
 
   // Тарифы и имя бота живут в БД (их меняет админ), а форма — клиентский
   // компонент, поэтому передаём значения пропсами.
-  const [plans, botUsername] = await Promise.all([getPlanList(), getBotUsername()]);
+  const [plans, botUsername, stickers] = await Promise.all([
+    getPlanList(),
+    getBotUsername(),
+    getStickerCatalog(),
+  ]);
 
   return (
     <main>
@@ -76,6 +81,7 @@ export default async function CreatePage({
         isAuthed={!!authorId}
         botUsername={botUsername}
         plans={plans}
+        stickers={stickers}
       />
     </main>
   );

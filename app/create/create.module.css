@@ -1129,46 +1129,12 @@
   color: #2E9E5B;
 }
 
-/* ─── Выпадающий список (select) ─── */
+/* ─── Выпадающий список ───
+   Раскладка обёртки; сам список рисует общий компонент
+   app/components/StyledSelect (нативный <select> здесь больше не используется). */
 .selectWrap {
   position: relative;
   width: 100%;
-}
-
-.selectWrap::after {
-  content: '';
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  width: 9px;
-  height: 9px;
-  border-right: 2px solid #B58AA0;
-  border-bottom: 2px solid #B58AA0;
-  transform: translateY(-65%) rotate(45deg);
-  pointer-events: none;
-}
-
-.select {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 100%;
-  font: inherit;
-  font-size: 15px;
-  color: #3D2C2A;
-  background: #fff;
-  border: 1.5px solid #EDE6EA;
-  border-radius: 12px;
-  padding: 12px 40px 12px 14px;
-  cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.select:hover { border-color: #F0A8C2; }
-
-.select:focus {
-  outline: none;
-  border-color: #E8367A;
-  box-shadow: 0 0 0 3px rgba(232, 54, 122, 0.12);
 }
 
 /* ─── Выбор тарифа перед оплатой ─── */

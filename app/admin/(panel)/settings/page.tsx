@@ -10,11 +10,16 @@ import { requireAdmin } from '@/lib/admin/guard';
 import { listTelegramContacts } from '@/lib/admin/queries';
 import { env } from '@/lib/env';
 import { getTelegramWebhookStatus } from '@/lib/notifications/telegramDiagnostics';
-import { getBotUsername, getPlans } from '@/lib/settings/appConfig';
+import {
+  getBotUsername,
+  getCloudinaryConfig,
+  getPlans,
+} from '@/lib/settings/appConfig';
 import { listSettings } from '@/lib/settings/store';
 
 import styles from '../../admin.module.css';
 import { dateTime, money, num } from '../../ui';
+import { CloudinaryEditor } from './CloudinaryEditor';
 import { PricingEditor } from './PricingEditor';
 import { SettingsEditor } from './SettingsEditor';
 
@@ -32,13 +37,15 @@ function Flag({ ok, label }: { ok: boolean; label: string }) {
 export default async function AdminSettingsPage() {
   await requireAdmin();
 
-  const [contacts, settings, telegram, plans, botUsername] = await Promise.all([
-    listTelegramContacts(20),
-    listSettings(),
-    getTelegramWebhookStatus(),
-    getPlans(),
-    getBotUsername(),
-  ]);
+  const [contacts, settings, telegram, plans, botUsername, cloudinary] =
+    await Promise.all([
+      listTelegramContacts(20),
+      listSettings(),
+      getTelegramWebhookStatus(),
+      getPlans(),
+      getBotUsername(),
+      getCloudinaryConfig(),
+    ]);
 
   const finikReady = Boolean(
     env.finik.apiKey &&
@@ -191,6 +198,22 @@ export default async function AdminSettingsPage() {
             </div>
           </div>
         </div>
+      </section>
+
+      <h2 className={styles.sectionTitle}>Хранилище файлов (Cloudinary)</h2>
+      <p className={styles.pageSubtitle} style={{ marginBottom: 14 }}>
+        Здесь лежат стикеры, анимации и фото авторов. Ключи хранятся в базе
+        (секрет — зашифрованным) и проверяются при сохранении.
+      </p>
+      <section className={styles.card} style={{ marginBottom: 16 }}>
+        <CloudinaryEditor
+          initial={{
+            cloudName: cloudinary.cloudName,
+            apiKey: cloudinary.apiKey,
+            uploadFolder: cloudinary.uploadFolder,
+            secretSet: Boolean(cloudinary.apiSecret),
+          }}
+        />
       </section>
 
       <h2 className={styles.sectionTitle}>Telegram-бот</h2>

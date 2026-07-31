@@ -14,6 +14,7 @@ import {
   MailOpen,
   Repeat,
   Settings,
+  Sticker,
   Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -53,6 +54,7 @@ export function AdminNav({ outboxAlerts = 0 }: { outboxAlerts?: number }) {
       items: [
         { href: '/admin/users', label: 'Пользователи', icon: Users },
         { href: '/admin/invitations', label: 'Приглашения', icon: MailOpen },
+        { href: '/admin/stickers', label: 'Стикеры', icon: Sticker },
         {
           href: '/admin/notifications',
           label: 'Уведомления',

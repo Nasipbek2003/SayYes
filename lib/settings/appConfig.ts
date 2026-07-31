@@ -27,6 +27,11 @@ export const SETTING_KEYS = {
   monthlyAmount: 'pricing.monthly_amount',
   monthlyPeriodDays: 'pricing.monthly_period_days',
   botUsername: 'telegram.bot_username',
+  cloudinaryCloudName: 'cloudinary.cloud_name',
+  cloudinaryApiKey: 'cloudinary.api_key',
+  cloudinaryApiSecret: 'cloudinary.api_secret',
+  cloudinaryFolder: 'cloudinary.upload_folder',
+  heroVideoPublicId: 'media.hero_video_public_id',
 } as const;
 
 /**
@@ -73,11 +78,6 @@ export async function getPlanList(): Promise<Plan[]> {
   return [plans.single, plans.monthly];
 }
 
-/** Один тариф по идентификатору. */
-export async function getPlan(id: PlanId): Promise<Plan> {
-  return (await getPlans())[id];
-}
-
 export interface PricingUpdate {
   singleAmount: number;
   monthlyAmount: number;
@@ -122,9 +122,85 @@ export async function getBotUsername(): Promise<string> {
   return env.telegram.botUsername;
 }
 
-/** Сохранить `@username` бота (пустая строка удаляет переопределение). */
-export async function saveBotUsername(value: string): Promise<void> {
-  await setSetting(SETTING_KEYS.botUsername, value.trim().replace(/^@/, ''), {
-    description: 'Имя Telegram-бота для ссылки привязки (t.me/<username>)',
-  });
+
+/* ============================================================
+   Cloudinary
+   ============================================================ */
+
+export interface CloudinaryConfig {
+  cloudName: string;
+  apiKey: string;
+  apiSecret: string;
+  /** Папка, внутри которой создаются все объекты проекта. */
+  uploadFolder: string;
+}
+
+/**
+ * Доступы к Cloudinary: сначала таблица `Setting`, потом `CLOUDINARY_URL` из
+ * окружения. Секрет в базе хранится зашифрованным (см. `store.ts`) и наружу не
+ * отдаётся — только на сервер, где подписывается загрузка.
+ */
+export async function getCloudinaryConfig(): Promise<CloudinaryConfig> {
+  const [cloudName, apiKey, apiSecret, folder] = await Promise.all([
+    getSetting(SETTING_KEYS.cloudinaryCloudName),
+    getSetting(SETTING_KEYS.cloudinaryApiKey),
+    getSetting(SETTING_KEYS.cloudinaryApiSecret),
+    getSetting(SETTING_KEYS.cloudinaryFolder),
+  ]);
+
+  return {
+    cloudName: cloudName?.trim() || env.cloudinary.cloudName,
+    apiKey: apiKey?.trim() || env.cloudinary.apiKey,
+    apiSecret: apiSecret?.trim() || env.cloudinary.apiSecret,
+    uploadFolder: folder?.trim() || env.cloudinary.uploadFolder,
+  };
+}
+
+/** Сохранить доступы Cloudinary. Пустые поля не перезаписывают текущие. */
+export async function saveCloudinaryConfig(update: {
+  cloudName?: string;
+  apiKey?: string;
+  apiSecret?: string;
+  uploadFolder?: string;
+}): Promise<void> {
+  const writes: Array<Promise<void>> = [];
+  if (update.cloudName?.trim()) {
+    writes.push(
+      setSetting(SETTING_KEYS.cloudinaryCloudName, update.cloudName.trim(), {
+        description: 'Cloudinary: имя облака (cloud name)',
+      }),
+    );
+  }
+  if (update.apiKey?.trim()) {
+    writes.push(
+      setSetting(SETTING_KEYS.cloudinaryApiKey, update.apiKey.trim(), {
+        description: 'Cloudinary: API key',
+      }),
+    );
+  }
+  if (update.apiSecret?.trim()) {
+    writes.push(
+      setSetting(SETTING_KEYS.cloudinaryApiSecret, update.apiSecret.trim(), {
+        isSecret: true,
+        description: 'Cloudinary: API secret (хранится зашифрованным)',
+      }),
+    );
+  }
+  if (update.uploadFolder?.trim()) {
+    writes.push(
+      setSetting(SETTING_KEYS.cloudinaryFolder, update.uploadFolder.trim(), {
+        description: 'Cloudinary: корневая папка проекта',
+      }),
+    );
+  }
+  await Promise.all(writes);
+}
+
+/**
+ * `publicId` фонового видео на главной. Пока не задан, страница использует
+ * локальный файл `/bg-hero.webm`.
+ */
+export async function getHeroVideoPublicId(): Promise<string | null> {
+  const value = (await getSetting(SETTING_KEYS.heroVideoPublicId))?.trim();
+  return value ? value : null;
 }

@@ -37,6 +37,42 @@ model Author {
  * Значения с `isSecret = true` хранятся зашифрованными (AES-256-GCM) —
  * см. `lib/settings/store.ts`. В панель они наружу не отдаются, только маска.
  */
+/**
+ * Каталог стикеров и анимаций. Файлы лежат в Cloudinary, в базе — только
+ * `publicId` и метаданные, из которых собирается ссылка с преобразованиями
+ * (`f_auto,q_auto`, нужная ширина). Так набор стикеров меняется из админки без
+ * деплоя, а тяжёлые файлы не едут в репозиторий.
+ */
+model Sticker {
+  id        String      @id @default(cuid())
+  /** Слаг категории каталога: bear, cat, … */
+  category  String
+  /** Подпись категории для UI (берётся первая непустая в категории). */
+  label     String?
+  /** Картинка или видеоклип: определяет и URL-путь Cloudinary, и тег в UI. */
+  kind      StickerKind @default(IMAGE)
+  /** Идентификатор файла в Cloudinary (без версии и расширения). */
+  publicId  String      @unique
+  format    String
+  width     Int?
+  height    Int?
+  bytes     Int?
+  /** Порядок в категории (по возрастанию). */
+  sortOrder Int         @default(0)
+  /** Скрыт из каталога, но файл сохранён. */
+  hidden    Boolean     @default(false)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([category, sortOrder])
+  @@index([hidden])
+}
+
+enum StickerKind {
+  IMAGE
+  VIDEO
+}
+
 model Setting {
   key         String   @id
   value       String

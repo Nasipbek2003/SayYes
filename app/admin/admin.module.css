@@ -1033,3 +1033,52 @@
     display: none;
   }
 }
+
+/* ============================================================
+   Каталог стикеров
+   ============================================================ */
+.stickerGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 14px;
+}
+
+.stickerCell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius-sm);
+  background: var(--adm-bg);
+}
+
+.stickerCellHidden {
+  opacity: 0.45;
+}
+
+.stickerThumb {
+  width: 100%;
+  height: 110px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.stickerMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.stickerActions {
+  display: flex;
+  gap: 6px;
+}
+
+.stickerActions .btn {
+  padding: 6px 10px;
+  font-size: 11px;
+}

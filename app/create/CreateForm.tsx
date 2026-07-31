@@ -36,6 +36,7 @@ import {
 import { PreviewPane } from './PreviewPane';
 import { StickerMedia } from '@/app/components/StickerMedia';
 import { StyledSelect } from '@/app/components/StyledSelect';
+import type { StickerCatalogCategory } from '@/lib/storage/stickerUrl';
 import styles from './create.module.css';
 
 export interface CreateFormTemplate {
@@ -58,49 +59,21 @@ export interface CreateFormProps {
   botUsername?: string;
   /** Действующие тарифы из БД; при отсутствии — значения по умолчанию. */
   plans?: Plan[];
+  /** Каталог стикеров из БД (Cloudinary); пустой — используется запасной набор. */
+  stickers?: StickerCatalogCategory[];
 }
 
 /**
- * Готовые стикеры-анимации, разложенные по категориям (папки в /public).
- * Автор сначала выбирает тип (Мишка / Котик), затем — конкретную картинку.
- * Имена файлов кодируются (пробелы и т.п.), чтобы корректно отдаваться статикой.
+ * Каталог стикеров приходит пропсом: файлы лежат в Cloudinary, а строки — в
+ * таблице `Sticker`, поэтому набор меняется из админки без деплоя. Плитки
+ * грузятся уменьшенными (`thumbUrl`), в данные приглашения сохраняется полная
+ * ссылка (`url`).
+ *
+ * Запасного локального набора нет намеренно: файлы из `public` удалены после
+ * переноса, и ссылки на них давали бы битые картинки. Пустой каталог — это
+ * состояние «стикеры не загружены», и форма честно об этом говорит, оставляя
+ * загрузку своей картинки доступной.
  */
-interface StickerCategory {
-  id: string;
-  label: string;
-  /** Готовые URL-стикеры этой категории (уже закодированные). */
-  items: string[];
-}
-
-const sticker = (folder: string, file: string) => `/${folder}/${encodeURIComponent(file)}`;
-
-const STICKER_CATEGORIES: StickerCategory[] = [
-  {
-    id: 'bear',
-    label: '🐻 Мишка',
-    items: [
-      sticker('Bear', '7.webp'),
-      sticker('Bear', '3c0bf60694a743f86df373b718278d4e_720w.webm'),
-    ],
-  },
-  {
-    id: 'cat',
-    label: '🐱 Котик',
-    items: [
-      sticker('Cat', '1.webp'),
-      sticker('Cat', '2.webp'),
-      sticker('Cat', '4.webp'),
-      sticker('Cat', '5.webp'),
-      sticker('Cat', '6.webp'),
-      sticker('Cat', '8.webp'),
-      sticker('Cat', 'From Klickpin.com- Online Store Ideas Ideas Youll Keep Coming Back To 43854-pin-id-729442470912046251.webm'),
-      sticker('Cat', 'From Klickpin.com- Wholesome Quick Pasta Recipes on a Budget-pin-id-1055883075130039083.webm'),
-      sticker('Cat', 'From Klickpin.com- Wholesome Quick Pasta Recipes on a Budget-pin-id-1069816086471659269.webm'),
-      sticker('Cat', 'From Klickpin.com- Wholesome Quick Pasta Recipes on a Budget-pin-id-1145251380223070419.webm'),
-      sticker('Cat', 'From Klickpin.com- Wholesome Quick Pasta Recipes on a Budget-pin-id-699535754629243597.webm'),
-    ],
-  },
-];
 
 const STEP_LABELS_START = 'Начало';
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
@@ -114,8 +87,11 @@ export function CreateForm({
   isAuthed = false,
   botUsername,
   plans = [DEFAULT_PLANS.single, DEFAULT_PLANS.monthly],
+  stickers,
 }: CreateFormProps) {
   const router = useRouter();
+
+  const stickerCatalog = stickers ?? [];
 
   const [step, setStep] = useState(1);
   const [data, setData] = useState<FormData>(() => buildInitialData({ fields: template.fields }));
@@ -475,6 +451,7 @@ export function CreateForm({
                       field={field}
                       value={data[field.key]}
                       error={touched[field.key] ? validation.fieldErrors[field.key] : undefined}
+                      stickers={stickerCatalog}
                       onChange={(v) => setVal(field.key, v)}
                       onUpload={(file) => onUploadImage(field.key, file)}
                       onFocus={() => focusField(field.key)}
@@ -691,11 +668,13 @@ function PlanPicker({
 
 /** Контрол одного поля шаблона — выбирается по типу поля. */
 function FieldControl({
-  field, value, error, onChange, onUpload, onFocus, onBlur,
+  field, value, error, stickers, onChange, onUpload, onFocus, onBlur,
 }: {
   field: TemplateField;
   value: unknown;
   error?: string;
+  /** Каталог стикеров для полей типа «картинка». */
+  stickers: StickerCatalogCategory[];
   onChange: (value: unknown) => void;
   onUpload: (file: File) => void;
   onFocus?: () => void;
@@ -715,7 +694,12 @@ function FieldControl({
     return (
       <div className={styles.field} onFocusCapture={onFocus} onPointerDownCapture={onFocus}>
         {label}
-        <ImagePicker value={str} onPick={onChange} onUpload={onUpload} />
+        <ImagePicker
+          value={str}
+          categories={stickers}
+          onPick={onChange}
+          onUpload={onUpload}
+        />
         {error ? <span className={styles.error}>{error}</span> : null}
       </div>
     );
@@ -794,19 +778,30 @@ function FieldControl({
 }
 
 /** Сетка готовых стикеров с выбором категории + загрузка своей картинки. */
-function ImagePicker({ value, onPick, onUpload }: { value: string; onPick: (url: string) => void; onUpload: (file: File) => void }) {
+function ImagePicker({
+  value,
+  categories,
+  onPick,
+  onUpload,
+}: {
+  value: string;
+  categories: StickerCatalogCategory[];
+  onPick: (url: string) => void;
+  onUpload: (file: File) => void;
+}) {
   // Стартовая вкладка — категория уже выбранного стикера (если он из каталога).
   const initialCategory =
-    STICKER_CATEGORIES.find((c) => c.items.includes(value))?.id ?? STICKER_CATEGORIES[0].id;
+    categories.find((c) => c.items.some((item) => item.url === value))?.id ??
+    categories[0]?.id ??
+    '';
   const [activeCategory, setActiveCategory] = useState(initialCategory);
 
-  const current =
-    STICKER_CATEGORIES.find((c) => c.id === activeCategory) ?? STICKER_CATEGORIES[0];
+  const current = categories.find((c) => c.id === activeCategory) ?? categories[0];
 
   return (
     <div className={styles.imageBlock}>
       <div className={styles.stickerTabs} role="tablist">
-        {STICKER_CATEGORIES.map((category) => (
+        {categories.map((category) => (
           <button
             type="button"
             key={category.id}
@@ -819,16 +814,30 @@ function ImagePicker({ value, onPick, onUpload }: { value: string; onPick: (url:
           </button>
         ))}
       </div>
+      {categories.length === 0 ? (
+        <p className={styles.fileHint}>
+          Готовые стикеры пока не загружены — можно добавить свою картинку.
+        </p>
+      ) : null}
       <div className={styles.imageGrid}>
-        {current.items.map((src) => (
+        {(current?.items ?? []).map((item) => (
           <button
             type="button"
-            key={src}
-            className={`${styles.imageThumb} ${value === src ? styles.imageThumbActive : ''}`}
-            onClick={() => onPick(src)}
-            aria-label={`Выбрать ${decodeURIComponent(src)}`}
+            key={item.id}
+            className={`${styles.imageThumb} ${value === item.url ? styles.imageThumbActive : ''}`}
+            onClick={() => onPick(item.url)}
+            aria-label="Выбрать стикер"
           >
-            <StickerMedia className={styles.imageThumbImg} src={src} />
+            {/* В плитке — статичное превью: анимацию видно в предпросмотре
+                справа, а каталог из 13 клипов иначе тянул бы мегабайты. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              className={styles.imageThumbImg}
+              src={item.thumbUrl}
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
           </button>
         ))}
       </div>

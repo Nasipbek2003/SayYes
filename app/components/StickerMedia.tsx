@@ -3,40 +3,46 @@
 /**
  * Renders a sticker/animation asset by its `src`.
  *
- * The sticker catalog mixes animated `.webp` images and `.webm` video clips
- * (see `public/Bear` and `public/Cat`). A plain `<img>` cannot play `.webm`,
- * so this helper picks the right element by file extension:
- *  - `.webm` → muted, looping, autoplaying `<video>` (behaves like a sticker)
- *  - everything else (webp / png / jpg / gif / uploaded photos) → `<img>`
+ * The sticker catalog mixes animated `.webp` images and `.webm` video clips.
+ * A plain `<img>` cannot play a video, so this helper picks the element by the
+ * URL: Cloudinary video links carry `/video/upload/`, local files end in
+ * `.webm` (see {@link isVideoUrl}).
  *
- * Used both in the create-flow picker and in the live invitation runtime so a
+ *  - видео → muted, looping, autoplaying `<video>` (ведёт себя как стикер)
+ *  - остальное (webp / png / jpg / gif / загруженные фото) → `<img>`
+ *
+ * Both the editor preview and the published invitation use this component, so a
  * chosen animation looks identical while editing and after publishing.
  */
+import { isVideoUrl } from '@/lib/storage/stickerUrl';
+
 export interface StickerMediaProps {
+  /** Ссылка на файл: локальная или Cloudinary. */
   src: string;
   className?: string;
   alt?: string;
+  /** Постер для видео: показывается, пока клип не загрузился. */
+  poster?: string;
 }
 
-/** Whether a sticker `src` points at a video clip rather than an image. */
-export function isVideoSticker(src: string): boolean {
-  return /\.webm(\?|#|$)/i.test(src);
-}
-
-export function StickerMedia({ src, className, alt = '' }: StickerMediaProps) {
-  if (isVideoSticker(src)) {
+export function StickerMedia({ src, className, alt = '', poster }: StickerMediaProps) {
+  if (isVideoUrl(src)) {
     return (
       <video
         className={className}
         src={src}
-        autoPlay
-        loop
+        poster={poster}
         muted
+        loop
+        autoPlay
         playsInline
-        aria-hidden="true"
+        // Метаданные вперёд: браузер не тянет весь клип до показа экрана.
+        preload="metadata"
+        aria-label={alt || undefined}
       />
     );
   }
+
   // eslint-disable-next-line @next/next/no-img-element
-  return <img className={className} src={src} alt={alt} />;
+  return <img className={className} src={src} alt={alt} loading="lazy" decoding="async" />;
 }

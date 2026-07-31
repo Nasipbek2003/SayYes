@@ -18,7 +18,7 @@
  */
 import { createHash } from 'node:crypto';
 
-import { env } from '@/lib/env';
+import { getCloudinaryConfig } from '@/lib/settings/appConfig';
 
 /** Maximum accepted image size in bytes (mirrors the UI hint: 7 MB). */
 export const MAX_IMAGE_BYTES = 7 * 1024 * 1024;
@@ -46,9 +46,17 @@ export class StorageError extends Error {
   }
 }
 
+/**
+ * Доступы Cloudinary: сначала таблица `Setting` (их правит администратор из
+ * панели), затем `CLOUDINARY_URL` из окружения — см. `getCloudinaryConfig`.
+ */
+async function resolveConfig() {
+  return getCloudinaryConfig();
+}
+
 /** True when Cloudinary credentials are present and uploads can proceed. */
-export function isConfigured(): boolean {
-  const { cloudName, apiKey, apiSecret } = env.cloudinary;
+export async function isConfigured(): Promise<boolean> {
+  const { cloudName, apiKey, apiSecret } = await resolveConfig();
   return Boolean(cloudName && apiKey && apiSecret);
 }
 
@@ -107,7 +115,8 @@ export async function uploadImage(
   buffer: Buffer,
   opts: { contentType: string; folder?: string },
 ): Promise<UploadResult> {
-  if (!isConfigured()) {
+  const { cloudName, apiKey, apiSecret, uploadFolder } = await resolveConfig();
+  if (!cloudName || !apiKey || !apiSecret) {
     throw new StorageError(
       500,
       'Хранилище изображений не настроено.',
@@ -115,7 +124,6 @@ export async function uploadImage(
     );
   }
 
-  const { cloudName, apiKey, apiSecret, uploadFolder } = env.cloudinary;
   const folder = opts.folder ?? uploadFolder;
   const timestamp = Math.floor(Date.now() / 1000);
 
@@ -168,8 +176,9 @@ export async function uploadImage(
  * when unconfigured, so the caller can continue purging other data.
  */
 export async function deleteByPrefix(prefix: string): Promise<number> {
-  if (!isConfigured() || prefix === '') return 0;
-  const { cloudName, apiKey, apiSecret } = env.cloudinary;
+  if (prefix === '') return 0;
+  const { cloudName, apiKey, apiSecret } = await resolveConfig();
+  if (!cloudName || !apiKey || !apiSecret) return 0;
   const auth = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
   const url =
     `https://api.cloudinary.com/v1_1/${cloudName}/resources/image/upload` +
@@ -194,8 +203,9 @@ export async function deleteByPrefix(prefix: string): Promise<number> {
  * public id is empty.
  */
 export async function deleteImage(publicId: string): Promise<boolean> {
-  if (!isConfigured() || publicId === '') return false;
-  const { cloudName, apiKey, apiSecret } = env.cloudinary;
+  if (publicId === '') return false;
+  const { cloudName, apiKey, apiSecret } = await resolveConfig();
+  if (!cloudName || !apiKey || !apiSecret) return false;
   const timestamp = Math.floor(Date.now() / 1000);
   const signature = signParams({ public_id: publicId, timestamp }, apiSecret);
 

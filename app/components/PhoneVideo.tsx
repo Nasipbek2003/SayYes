@@ -11,7 +11,18 @@ import { useEffect, useRef, useState } from 'react';
 import { Heart } from 'lucide-react';
 import styles from '../page.module.css';
 
-export function PhoneVideo() {
+export interface PhoneVideoProps {
+  /**
+   * Ссылка на ролик. Приходит с сервера: если в настройках задан
+   * `media.hero_video_public_id`, это оптимизированная ссылка Cloudinary,
+   * иначе — локальный файл `/bg-hero.webm` (2.1 МБ).
+   */
+  src?: string;
+  /** Первый кадр: показывается, пока грузится видео. */
+  poster?: string;
+}
+
+export function PhoneVideo({ src = '/bg-hero.webm', poster }: PhoneVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [showInvite, setShowInvite] = useState(false);
 
@@ -54,7 +65,8 @@ export function PhoneVideo() {
       <video
         ref={videoRef}
         className={styles.phoneVideo}
-        src="/bg-hero.webm"
+        src={src}
+        poster={poster}
         muted
         loop
         playsInline

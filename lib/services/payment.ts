@@ -29,16 +29,11 @@ import type { PaymentEvent, PaymentProvider } from '@/lib/payments/provider';
 import { invitationService as defaultInvitationService } from '@/lib/services/invitation';
 import type { ActivationResult } from '@/lib/services/invitation';
 import { env } from '@/lib/env';
-import {
-  DEFAULT_PLANS,
-  planIdFromPrisma,
-  type Plan,
-  type PlanId,
-} from '@/lib/pricing';
+import { planIdFromPrisma, type Plan, type PlanId } from '@/lib/pricing';
 import { getPlans } from '@/lib/settings/appConfig';
 import type { Tier } from '@prisma/client';
 
-export { parsePlan } from '@/lib/pricing';
+
 export type { PlanId } from '@/lib/pricing';
 
 /**
@@ -47,16 +42,7 @@ export type { PlanId } from '@/lib/pricing';
  */
 const PAID_TIER: Tier = 'PREMIUM';
 
-/**
- * Суммы по умолчанию, в целых сомах.
- *
- * @deprecated Действующие цены лежат в таблице `Setting` — читайте `getPlans()`
- * из `lib/settings/appConfig.ts`. Здесь только запасные значения.
- */
-export const PLAN_AMOUNTS: Record<PlanId, number> = {
-  single: DEFAULT_PLANS.single.amount,
-  monthly: DEFAULT_PLANS.monthly.amount,
-};
+
 
 /** Error carrying the HTTP status the handler should return for domain failures. */
 export class PaymentServiceError extends Error {
