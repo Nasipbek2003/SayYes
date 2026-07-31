@@ -14,6 +14,8 @@
  * скрипт не угадывает, а сверяется с базой: если стикера в каталоге нет, ссылка
  * остаётся нетронутой.
  */
+import './loadEnv';
+
 import { mkdir, readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 

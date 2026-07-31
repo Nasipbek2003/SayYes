@@ -10,6 +10,8 @@
  *
  * После переноса локальные файлы можно удалить — ссылки берутся из базы.
  */
+import './loadEnv';
+
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 
