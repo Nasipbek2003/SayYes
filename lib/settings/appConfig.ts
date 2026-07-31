@@ -32,6 +32,7 @@ export const SETTING_KEYS = {
   cloudinaryApiSecret: 'cloudinary.api_secret',
   cloudinaryFolder: 'cloudinary.upload_folder',
   heroVideoPublicId: 'media.hero_video_public_id',
+  telegramWebhookSecret: 'telegram.webhook_secret',
 } as const;
 
 /**
@@ -203,4 +204,27 @@ export async function saveCloudinaryConfig(update: {
 export async function getHeroVideoPublicId(): Promise<string | null> {
   const value = (await getSetting(SETTING_KEYS.heroVideoPublicId))?.trim();
   return value ? value : null;
+}
+
+/**
+ * Секрет вебхука Telegram: база → окружение.
+ *
+ * Telegram присылает его в заголовке `X-Telegram-Bot-Api-Secret-Token`, и
+ * значение обязано совпадать с тем, что было передано при регистрации вебхука.
+ * Поэтому менять его можно только вместе с перерегистрацией — этим занимается
+ * `POST /api/admin/telegram/webhook`.
+ */
+export async function getTelegramWebhookSecret(): Promise<string> {
+  const fromDb = (await getSetting(SETTING_KEYS.telegramWebhookSecret))?.trim();
+  if (fromDb) return fromDb;
+  return env.telegram.webhookSecret;
+}
+
+/** Сохранить секрет вебхука (шифруется). */
+export async function saveTelegramWebhookSecret(value: string): Promise<void> {
+  await setSetting(SETTING_KEYS.telegramWebhookSecret, value.trim(), {
+    isSecret: true,
+    description:
+      'Секрет вебхука Telegram. Меняется только вместе с перерегистрацией вебхука.',
+  });
 }

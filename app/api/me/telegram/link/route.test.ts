@@ -21,6 +21,12 @@ vi.mock('@/lib/auth/nextCookies', () => ({
   getCurrentAuthor: () => getCurrentAuthor(),
 }));
 
+// Имя бота роут берёт из настроек (БД → окружение). В юнит-тесте базы нет,
+// поэтому подменяем модуль настроек его «окруженческой» половиной.
+vi.mock('@/lib/settings/appConfig', () => ({
+  getBotUsername: async () => (process.env.TELEGRAM_BOT_USERNAME ?? '').trim(),
+}));
+
 const { POST } = await import('./route');
 
 const SECRET = 'test-session-secret-value';

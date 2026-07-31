@@ -24,6 +24,12 @@ vi.mock('@/lib/notifications/telegram', () => ({
   getTelegramClient: () => ({ sendMessage: (...args: unknown[]) => sendMessage(...args) }),
 }));
 
+// Секрет вебхука роут читает из настроек (БД → окружение). База в юнит-тесте
+// недоступна, поэтому оставляем только чтение из окружения.
+vi.mock('@/lib/settings/appConfig', () => ({
+  getTelegramWebhookSecret: async () => (process.env.TELEGRAM_WEBHOOK_SECRET ?? '').trim(),
+}));
+
 const { POST } = await import('./route');
 
 const SECRET = 'test-session-secret-value';

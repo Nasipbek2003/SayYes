@@ -22,6 +22,7 @@ import { dateTime, money, num } from '../../ui';
 import { CloudinaryEditor } from './CloudinaryEditor';
 import { PricingEditor } from './PricingEditor';
 import { SettingsEditor } from './SettingsEditor';
+import { WebhookButton } from './WebhookButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -289,13 +290,14 @@ export default async function AdminSettingsPage() {
           </p>
         ) : null}
 
-        {!telegram.healthy ? (
-          <p className={styles.pageSubtitle} style={{ marginTop: 12 }}>
-            Перенастроить адрес: <code>node scripts/telegram-webhook.mjs set https://домен</code>{' '}
-            (нужен публичный HTTPS: прод-домен или туннель). Проверить —{' '}
-            <code>node scripts/telegram-webhook.mjs info</code>.
-          </p>
-        ) : null}
+        <WebhookButton />
+
+        <p className={styles.pageSubtitle} style={{ marginTop: 10 }}>
+          Кнопка регистрирует адрес той страницы, где вы находитесь: на прод-домене
+          — постоянный адрес, в туннеле — адрес туннеля. У бота один вебхук, поэтому
+          последняя регистрация перекрывает предыдущую. Из терминала то же делает{' '}
+          <code>node scripts/telegram-webhook.mjs info</code>.
+        </p>
       </section>
 
       <h2 className={styles.sectionTitle}>Настройки в базе ({num(settings.length)})</h2>

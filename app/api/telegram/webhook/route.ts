@@ -15,7 +15,7 @@
  * messages or invalid codes) so Telegram doesn't retry endlessly; only a bad
  * secret (401) or unparseable body (400) is rejected.
  */
-import { env } from '@/lib/env';
+import { getTelegramWebhookSecret } from '@/lib/settings/appConfig';
 import { authorRepo, telegramContactRepo } from '@/lib/repositories';
 import {
   captureTelegramContact,
@@ -53,8 +53,10 @@ async function replyToStart(
 }
 
 export async function POST(request: Request): Promise<Response> {
-  // 1) Verify the Telegram secret token, when configured.
-  const expected = process.env.TELEGRAM_WEBHOOK_SECRET || env.telegram.webhookSecret;
+  // 1) Verify the Telegram secret token, when configured. Значение берётся из
+  //    настроек в БД (их правит панель при перерегистрации вебхука), с откатом
+  //    на переменную окружения.
+  const expected = await getTelegramWebhookSecret();
   if (expected) {
     const provided = request.headers.get('x-telegram-bot-api-secret-token');
     if (provided !== expected) {
